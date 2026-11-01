@@ -1,5 +1,5 @@
 <h1 align="center">
-    Edu-365
+    INTERNATIONAL KNOWLEDGE CAMPUS
 </h1>
 
 <h3 align="center">
