@@ -28,13 +28,25 @@ export default SpeedDialTemplate;
 
 // Styled component for customizing the SpeedDial
 const CustomSpeedDial = styled(SpeedDial)`
-  // Style for the floating action button (fab) within the SpeedDial
   .MuiSpeedDial-fab {
-    background-color: #032803; // Default background color
+    background: linear-gradient(135deg, #0077D4 0%, #00A3FF 100%);
+    color: #ffffff;
+    box-shadow: 0 4px 16px rgba(0, 119, 212, 0.4);
 
-    // Hover effect for the fab
     &:hover {
-      background-color: green; // Background color on hover
+      background: linear-gradient(135deg, #0060aa 0%, #008be5 100%);
+      box-shadow: 0 6px 24px rgba(0, 163, 255, 0.6);
+    }
+  }
+
+  .MuiSpeedDialAction-fab {
+    background: rgba(13, 22, 41, 0.9);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: #f8fafc;
+    &:hover {
+      background: rgba(13, 22, 41, 1);
+      border-color: rgba(0, 163, 255, 0.4);
     }
   }
 `;

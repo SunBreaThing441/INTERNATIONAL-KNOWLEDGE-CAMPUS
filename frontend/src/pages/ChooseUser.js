@@ -1,177 +1,240 @@
 import React, { useEffect, useState } from "react";
-// Import necessary modules from react-router-dom for navigation
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import {
   Grid,
-  Paper,
   Box,
   Container,
+  Typography,
   CircularProgress,
   Backdrop,
 } from "@mui/material";
-// Import icons from Material UI
-import { AccountCircle, School, Group } from "@mui/icons-material";
+import { AccountBalance, Psychology, School, ArrowForward, Public } from "@mui/icons-material";
 import styled from "styled-components";
 import { useDispatch, useSelector } from "react-redux";
 import { loginUser } from "../redux/userRelated/userHandle";
 import Popup from "../components/Popup";
 
-// Define the ChooseUser component
 const ChooseUser = ({ visitor }) => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  const password = "zxc";
 
-  // Select data from the Redux store
-  const { status, currentUser, currentRole } = useSelector(
-    (state) => state.user
-  );
+  const { status, currentUser, currentRole } = useSelector((state) => state.user);
 
-  // State variables for loader, popup visibility, and message
   const [loader, setLoader] = useState(false);
   const [showPopup, setShowPopup] = useState(false);
   const [message, setMessage] = useState("");
 
-  // Function to handle navigation based on user type
   const navigateHandler = (user) => {
     if (user === "Admin") {
-      if (visitor === "guest") { // Check if the user is a guest
-        const email = "yogendra@12";
-        const fields = { email, password };
+      if (visitor === "guest") {
         setLoader(true);
-        dispatch(loginUser(fields, user));
+        dispatch(loginUser({ email: "sampleadmin@gmail.com", password: "123" }, "Admin"));
       } else {
         navigate("/Adminlogin");
       }
     } else if (user === "Student") {
-      if (visitor === "guest") { // Check if the user is a guest
-        const rollNum = "1";
-        const studentName = "Dipesh Awasthi";
-        const fields = { rollNum, studentName, password };
+      if (visitor === "guest") {
         setLoader(true);
-        dispatch(loginUser(fields, user));
+        dispatch(loginUser({ rollNum: "1", studentName: "DANIEL MUSYOKI", password: "12345" }, "Student"));
       } else {
         navigate("/Studentlogin");
       }
-    } else if (user === "Teacher") { // Check if the user is a guest
+    } else if (user === "Teacher") {
       if (visitor === "guest") {
-        const email = "tony@12";
-        const fields = { email, password };
         setLoader(true);
-        dispatch(loginUser(fields, user));
+        dispatch(loginUser({ email: "teacher4@gmail.com", password: "12345" }, "Teacher"));
       } else {
         navigate("/Teacherlogin");
       }
     }
   };
 
-  useEffect(() => { // Check the status from the Redux store and update the UI accordingly
+  useEffect(() => {
     if (status === "success" || currentUser !== null) {
-      if (currentRole === "Admin") {
-        navigate("/Admin/dashboard");
-      } else if (currentRole === "Student") {
-        navigate("/Student/dashboard");
-      } else if (currentRole === "Teacher") {
-        navigate("/Teacher/dashboard");
-      }
+      if (currentRole === "Admin") navigate("/Admin/dashboard");
+      else if (currentRole === "Student") navigate("/Student/dashboard");
+      else if (currentRole === "Teacher") navigate("/Teacher/dashboard");
     } else if (status === "error") {
       setLoader(false);
-      setMessage("Network Error");
+      setMessage("Network Communication Failure. Ensure Backend is active on Port 5000.");
       setShowPopup(true);
     }
   }, [status, currentRole, navigate, currentUser]);
 
   return (
-    <StyledContainer>
-      {/* Main container */}
-      <Container>
-        <StyledGrid container spacing={2} justifyContent="center">
-          <Grid item xs={12} sm={6} md={4}>
-            <div onClick={() => navigateHandler("Admin")}>
-              <StyledPaper elevation={3}>
-                {/* Admin section */}
-                <Box mb={2}>
-                  <AccountCircle fontSize="large" />
-                </Box>
-                <StyledTypography>Admin</StyledTypography>
-                Login as an administrator to access the dashboard to manage app
-                data.
-              </StyledPaper>
-            </div>
+    <ShellContainer>
+      <Container maxWidth="lg">
+        <Box sx={{ textAlign: "center", mb: 4 }}>
+          <Box sx={{ display: "inline-flex", alignItems: "center", gap: 1, mb: 1 }}>
+            <Public sx={{ color: "#00A3FF", fontSize: 24 }} />
+            <Typography variant="overline" sx={{ color: "#00A3FF", fontWeight: 700, letterSpacing: "0.1em" }}>
+              INTERNATIONAL KNOWLEDGE CAMPUS Ecosystem
+            </Typography>
+          </Box>
+          <Typography variant="h3" sx={{ fontWeight: 800, color: "#F8FAFC", letterSpacing: "-0.02em" }}>
+            Choose Your <span style={{ color: "#00C49F" }}>Access Terminal</span>
+          </Typography>
+          <Typography variant="body1" sx={{ color: "#94A3B8", mt: 1, maxWidth: 640, mx: "auto" }}>
+            {visitor === "guest"
+              ? "Instant Sandbox Mode: Select an institutional identity below to automatically authenticate with live demo credentials."
+              : "Select your institutional role to authenticate into your dedicated workspace."}
+          </Typography>
+        </Box>
+
+        <Grid container spacing={3.5} justifyContent="center" alignItems="stretch">
+          {/* Admin Terminal */}
+          <Grid item xs={12} sm={6} md={4} sx={{ display: "flex" }}>
+            <TerminalCard onClick={() => navigateHandler("Admin")}>
+              <IconHalo color="#0077D4">
+                <AccountBalance sx={{ fontSize: 34, color: "#00A3FF" }} />
+              </IconHalo>
+              <RoleTitle>Chancellor Console</RoleTitle>
+              <RoleSubtitle>Institutional Governance</RoleSubtitle>
+              <RoleDesc>
+                Manage class cohorts, onboard faculty, oversee academic records, and configure institutional circulars.
+              </RoleDesc>
+              <AccessFooter color="#0077D4">
+                <span>{visitor === "guest" ? "Launch Demo Chancellor" : "Enter Console"}</span>
+                <ArrowForward sx={{ fontSize: 16 }} />
+              </AccessFooter>
+            </TerminalCard>
           </Grid>
-          <Grid item xs={12} sm={6} md={4}>
-            <StyledPaper elevation={3}>
-              {/* Student section */}
-              <div onClick={() => navigateHandler("Student")}>
-                <Box mb={2}>
-                  <School fontSize="large" />
-                </Box>
-                <StyledTypography>Student</StyledTypography>
-                Login as a student to explore course materials, assignments, and
-                resources.
-              </div>
-            </StyledPaper>
+
+          {/* Teacher / Faculty Terminal */}
+          <Grid item xs={12} sm={6} md={4} sx={{ display: "flex" }}>
+            <TerminalCard onClick={() => navigateHandler("Teacher")}>
+              <IconHalo color="#00C49F">
+                <Psychology sx={{ fontSize: 34, color: "#00C49F" }} />
+              </IconHalo>
+              <RoleTitle>Faculty Mentor</RoleTitle>
+              <RoleSubtitle>Academic Faculty & Curricula</RoleSubtitle>
+              <RoleDesc>
+                Conduct live classroom sessions, mark verified attendance, grade assessments, and track scholar metrics.
+              </RoleDesc>
+              <AccessFooter color="#00C49F">
+                <span>{visitor === "guest" ? "Launch Demo Mentor" : "Enter Terminal"}</span>
+                <ArrowForward sx={{ fontSize: 16 }} />
+              </AccessFooter>
+            </TerminalCard>
           </Grid>
-          <Grid item xs={12} sm={6} md={4}>
-            <StyledPaper elevation={3}>
-              {/* Teacher section */}
-              <div onClick={() => navigateHandler("Teacher")}>
-                <Box mb={2}>
-                  <Group fontSize="large" />
-                </Box>
-                <StyledTypography>Teacher</StyledTypography>
-                Login as a Teacher to create courses, assignments, and track
-                student progress.
-              </div>
-            </StyledPaper>
+
+          {/* Student Terminal */}
+          <Grid item xs={12} sm={6} md={4} sx={{ display: "flex" }}>
+            <TerminalCard onClick={() => navigateHandler("Student")}>
+              <IconHalo color="#A855F7">
+                <School sx={{ fontSize: 34, color: "#A855F7" }} />
+              </IconHalo>
+              <RoleTitle>Global Scholar</RoleTitle>
+              <RoleSubtitle>Learner Workspace & Identity</RoleSubtitle>
+              <RoleDesc>
+                Review enrolled syllabi, view interactive attendance gauges, inspect test marks, and submit feedback.
+              </RoleDesc>
+              <AccessFooter color="#A855F7">
+                <span>{visitor === "guest" ? "Launch Demo Scholar" : "Enter Portal"}</span>
+                <ArrowForward sx={{ fontSize: 16 }} />
+              </AccessFooter>
+            </TerminalCard>
           </Grid>
-        </StyledGrid>
+        </Grid>
+
+        <Box sx={{ textAlign: "center", mt: 4 }}>
+          <Link to="/" style={{ color: "#94A3B8", fontSize: "0.9rem", display: "inline-flex", alignItems: "center", gap: "6px" }}>
+            ← Return to Ecosystem Landing
+          </Link>
+        </Box>
       </Container>
-      {/* Backdrop for loader */}
-      <Backdrop
-        sx={{ color: "#fff", zIndex: (theme) => theme.zIndex.drawer + 1 }}
-        open={loader}
-      >
-        <CircularProgress color="inherit" />
-        Please Wait
+
+      <Backdrop sx={{ color: "#fff", zIndex: (theme) => theme.zIndex.drawer + 1 }} open={loader}>
+        <Box sx={{ textAlign: "center" }}>
+          <CircularProgress color="inherit" />
+          <Typography variant="body2" sx={{ mt: 2, color: "#00A3FF", fontWeight: 600 }}>
+            Provisioning Ecosystem Session...
+          </Typography>
+        </Box>
       </Backdrop>
-      {/* Popup component to display messages */}
-      <Popup
-        message={message}
-        setShowPopup={setShowPopup}
-        showPopup={showPopup}
-      />
-    </StyledContainer>
+
+      <Popup message={message} setShowPopup={setShowPopup} showPopup={showPopup} />
+    </ShellContainer>
   );
 };
 
 export default ChooseUser;
 
-// Styled components for styling
-const StyledContainer = styled.div`
-  background: linear-gradient(to bottom, #4b1d70, #19118b);
-  min-height: 100vh; /* Change to min-height for responsiveness */
+const ShellContainer = styled.div`
+  min-height: 100vh;
+  width: 100%;
   display: flex;
-  justify-content: center;
-  align-items: center; /* Center items vertically */
-  padding: 2rem;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: center;
+  padding: 40px 20px 60px;
+  overflow-y: auto;
+  box-sizing: border-box;
 `;
 
-const StyledPaper = styled(Paper)`
-  padding: 20px;
-  text-align: center;
-  background-color: #1f1f38;
-  color: rgba(255, 255, 255, 0.6);
+const TerminalCard = styled.div`
+  background: rgba(15, 26, 58, 0.7);
+  backdrop-filter: blur(20px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 20px;
+  padding: 30px 24px;
   cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  width: 100%;
 
   &:hover {
-    background-color: #07005b;
-    color: white;
+    transform: translateY(-6px);
+    border-color: rgba(0, 119, 212, 0.5);
+    box-shadow: 0 20px 48px -10px rgba(0, 0, 0, 0.6), 0 0 24px rgba(0, 119, 212, 0.2);
   }
 `;
-const StyledGrid = styled(Grid)`
-  max-width: 1500px; /* Adjust max-width according to your design */
+
+const IconHalo = styled.div`
+  width: 58px;
+  height: 58px;
+  border-radius: 16px;
+  background: ${(props) => props.color || "#0077D4"}18;
+  border: 1px solid ${(props) => props.color || "#0077D4"}40;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 16px;
 `;
-const StyledTypography = styled.h2`
-  margin-bottom: 10px;
+
+const RoleTitle = styled.h3`
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: #F8FAFC;
+  margin-bottom: 4px;
+`;
+
+const RoleSubtitle = styled.span`
+  font-size: 0.76rem;
+  font-weight: 700;
+  color: #00A3FF;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-bottom: 12px;
+`;
+
+const RoleDesc = styled.p`
+  font-size: 0.86rem;
+  line-height: 1.55;
+  color: #94A3B8;
+  flex-grow: 1;
+  margin-bottom: 20px;
+`;
+
+const AccessFooter = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 16px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: ${(props) => props.color || "#0077D4"};
 `;

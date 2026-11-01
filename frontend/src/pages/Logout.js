@@ -1,108 +1,183 @@
-import React from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useDispatch, useSelector } from 'react-redux';
-import { authLogout } from '../redux/userRelated/userSlice'; // Import the logout action
-import styled from 'styled-components';
+import React from "react";
+import { useNavigate } from "react-router-dom";
+import { useDispatch, useSelector } from "react-redux";
+import { logoutUser } from "../redux/userRelated/userHandle";
+import { Box, Typography, Button, Avatar } from "@mui/material";
+import { Logout as LogoutIcon, ArrowBack, Security } from "@mui/icons-material";
+import styled from "styled-components";
 
 const Logout = () => {
-    // Access the current user from the Redux store
-    const currentUser = useSelector(state => state.user.currentUser); 
+  const { currentUser, currentRole } = useSelector((state) => state.user);
+  const navigate = useNavigate();
+  const dispatch = useDispatch();
 
-    const navigate = useNavigate(); // Hook for navigation
-    const dispatch = useDispatch(); // Hook for dispatching Redux actions
+  const handleLogout = () => {
+    dispatch(logoutUser());
+    navigate("/", { replace: true });
+  };
 
-    // Function to handle the logout process
-    const handleLogout = () => {
-        dispatch(authLogout());
-        navigate('/');
-    };
+  const handleCancel = () => {
+    if (currentRole) {
+      navigate(`/${currentRole}/dashboard`, { replace: true });
+    } else {
+      navigate(-1);
+    }
+  };
 
-    // Function to handle the cancel action
-    const handleCancel = () => {
-        navigate(-1); // Navigate back to the previous page
-    };
+  const roleLabel =
+    currentRole === "Admin"
+      ? "Chancellor / Administrator"
+      : currentRole === "Teacher"
+      ? "Faculty Mentor • Academic Facilitator"
+      : "Global Scholar";
 
-    // Styled component for the background of the page
-    const PageBackground = styled.div`
-    background-color: #85769f66;
-    height: 100vh;
-        display: flex;
-    justify-content: center;
-    align-items: center;
-    `;
-    // Render the logout confirmation page
-    return (
-        <PageBackground>
-            <LogoutContainer>
-                {/* Display the user's name */}
-                <UserName>{currentUser.name}</UserName>
-                <LogoutMessage>Are you sure you want to log out?</LogoutMessage>
-                <ButtonContainer>
-                    <LogoutButtonLogout onClick={handleLogout}>Log Out</LogoutButtonLogout>
-                    <LogoutButtonCancel onClick={handleCancel}>Cancel</LogoutButtonCancel>
-                </ButtonContainer>
-            </LogoutContainer>
-        </PageBackground>
-    );
+  return (
+    <LogoutBackdrop>
+      <LogoutGlassCard>
+        <Box sx={{ display: "flex", justifyContent: "center", mb: 2 }}>
+          <SecurityIconWrapper>
+            <Security sx={{ fontSize: 32, color: "#EF4444" }} />
+          </SecurityIconWrapper>
+        </Box>
+
+        <Typography
+          variant="h5"
+          sx={{
+            fontWeight: 800,
+            color: "#F8FAFC",
+            textAlign: "center",
+            letterSpacing: "-0.01em",
+            mb: 0.5,
+          }}
+        >
+          Terminate Authenticated Session
+        </Typography>
+
+        <Typography
+          variant="body2"
+          sx={{ color: "#94A3B8", textAlign: "center", mb: 3 }}
+        >
+          Confirm secure session detachment from INTERNATIONAL KNOWLEDGE CAMPUS ecosystem.
+        </Typography>
+
+        {/* Identity Badge */}
+        <IdentityCard>
+          <Avatar
+            sx={{
+              width: 46,
+              height: 46,
+              bgcolor: "rgba(0, 119, 212, 0.2)",
+              color: "#00A3FF",
+              fontWeight: 800,
+              flexShrink: 0,
+            }}
+          >
+            {currentUser?.name ? String(currentUser.name).charAt(0).toUpperCase() : "U"}
+          </Avatar>
+          <Box sx={{ minWidth: 0, flexGrow: 1, overflow: "hidden" }}>
+            <Typography variant="subtitle1" noWrap sx={{ fontWeight: 700, color: "#F8FAFC", lineHeight: 1.2 }}>
+              {currentUser?.name || "Active Session Holder"}
+            </Typography>
+            <Typography variant="caption" sx={{ color: "#00C49F", fontWeight: 600, display: "block", wordBreak: "break-word" }}>
+              {roleLabel} {currentUser?.email ? `• ${currentUser.email}` : ""}
+            </Typography>
+          </Box>
+        </IdentityCard>
+
+        <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5, mt: 3 }}>
+          <LogoutActionButton onClick={handleLogout} fullWidth>
+            <LogoutIcon sx={{ fontSize: 18, mr: 1 }} />
+            Revoke Credentials & Sign Out
+          </LogoutActionButton>
+
+          <CancelActionButton onClick={handleCancel} fullWidth>
+            <ArrowBack sx={{ fontSize: 18, mr: 1 }} />
+            Return to Dashboard
+          </CancelActionButton>
+        </Box>
+      </LogoutGlassCard>
+    </LogoutBackdrop>
+  );
 };
 
 export default Logout;
 
-// Styled components for styling the logout page
-
-// Container for the logout confirmation box
-const LogoutContainer = styled.div`
-    border: 1px solid #ccc;
-    border-radius: 3px;
-    padding: 40px;
-  
-    background-color: #fff; 
-    color: black;
-  
-    align-items: center;
-`;
-// Style for the user name
-const UserName = styled.h1`
-    text-align: center;
-    font-size:2rem;
-    font-family: 'Times New Roman', Times, serif;
+const LogoutBackdrop = styled(Box)`
+  min-height: 100vh;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 32px 16px;
+  overflow-y: auto;
+  box-sizing: border-box;
+  background: radial-gradient(circle at 50% 30%, rgba(239, 68, 68, 0.08) 0%, transparent 60%),
+    radial-gradient(circle at 80% 80%, rgba(0, 119, 212, 0.12) 0%, transparent 50%),
+    #080e1a;
 `;
 
-// Style for the logout message
-const LogoutMessage = styled.p`
-    margin-bottom: 20px;
-    font-size: 16px;
-    text-align: center;
+const LogoutGlassCard = styled(Box)`
+  background: rgba(13, 22, 41, 0.85);
+  backdrop-filter: blur(24px);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 20px;
+  padding: 36px 32px;
+  width: 100%;
+  max-width: 440px;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6);
 `;
 
-// Base style for the buttons
-const LogoutButton = styled.button`
-    padding: 6px 12px;
-    margin-top: 10px;
-    border-radius: 5px;
-    font-size: 16px;
-    color: #fff;
-    cursor: pointer;
-
-    &:hover {
-        color: #fff;
-        background-color: #333;
-    }
+const SecurityIconWrapper = styled(Box)`
+  width: 64px;
+  height: 64px;
+  border-radius: 18px;
+  background: rgba(239, 68, 68, 0.12);
+  border: 1px solid rgba(239, 68, 68, 0.25);
+  display: flex;
+  align-items: center;
+  justify-content: center;
 `;
 
-// Style for the logout button
-const LogoutButtonLogout = styled(LogoutButton)`
-  background-color: #ea0606;
+const IdentityCard = styled(Box)`
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  padding: 12px 16px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
 `;
 
-// Style for the cancel button
-const LogoutButtonCancel = styled(LogoutButton)`
-  background-color: rgb(99, 60, 99);
+const LogoutActionButton = styled(Button)`
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%) !important;
+  color: #ffffff !important;
+  font-weight: 700 !important;
+  text-transform: none !important;
+  font-size: 0.92rem !important;
+  padding: 12px 20px !important;
+  border-radius: 12px !important;
+  box-shadow: 0 4px 16px rgba(239, 68, 68, 0.35) !important;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
+
+  &:hover {
+    box-shadow: 0 6px 24px rgba(239, 68, 68, 0.5) !important;
+    transform: translateY(-1px) !important;
+  }
 `;
-// Container for the buttons
-const ButtonContainer = styled.div`
-    display: flex;
-    justify-content:space-around;
-    width: 100%;
-    margin-top: 10px;
+
+const CancelActionButton = styled(Button)`
+  background: rgba(255, 255, 255, 0.06) !important;
+  color: #94a3b8 !important;
+  font-weight: 600 !important;
+  text-transform: none !important;
+  font-size: 0.92rem !important;
+  padding: 12px 20px !important;
+  border-radius: 12px !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  transition: all 0.2s !important;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.1) !important;
+    color: #f8fafc !important;
+  }
 `;

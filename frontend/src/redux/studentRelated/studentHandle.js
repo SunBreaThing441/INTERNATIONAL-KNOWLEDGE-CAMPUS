@@ -1,4 +1,4 @@
-import axios from "axios";
+import { apiClient, classroomApi } from "../../api/apiClient";
 import {
   getRequest,
   getSuccess,
@@ -7,69 +7,72 @@ import {
   stuffDone,
 } from "./studentSlice";
 
-//const REACT_APP_BASE_URL="http://localhost:5000"
-
-// Async action to fetch all students
+/**
+ * getAllStudents: Fetches all students enrolled under a school/academy.
+ * Endpoint: GET /Students/:id
+ */
 export const getAllStudents = (id) => async (dispatch) => {
-  dispatch(getRequest()); // Dispatch getRequest to indicate the start of the request
+  dispatch(getRequest());
 
-  // Try to make an asynchronous GET request to the specified URL
   try {
-    const result = await axios.get(
-      `${process.env.REACT_APP_BASE_URL}/Students/${id}`
-    );
+    const result = await classroomApi.getStudents(id);
 
-    // Check if the response contains a message indicating an error
     if (result.data.message) {
-      dispatch(getFailed(result.data.message)); // Dispatch getFailed with the error message
+      dispatch(getFailed(result.data.message));
     } else {
-      dispatch(getSuccess(result.data)); // Dispatch getSuccess with the retrieved data
+      dispatch(getSuccess(result.data));
     }
   } catch (error) {
-    dispatch(getError(error));
+    const message = error.response?.data?.message || error.message || "Failed to retrieve student roster";
+    dispatch(getError(message));
   }
 };
 
-export const updateStudentFields =
-  (id, fields, address) => async (dispatch) => { // Async action to update student fields
-    dispatch(getRequest()); // Dispatch getRequest to indicate the start of the request
+/**
+ * updateStudentFields: Daily classroom operations
+ * - StudentAttendance: PUT /StudentAttendance/:id (with { subName, status, date })
+ * - UpdateExamResult: PUT /UpdateExamResult/:id (with { subName, marksObtained })
+ * - Other student field modifications
+ */
+export const updateStudentFields = (id, fields, address) => async (dispatch) => {
+  dispatch(getRequest());
 
-    // Try to make an asynchronous PUT request to the specified URL
-    try {
-      const result = await axios.put(
-        `${process.env.REACT_APP_BASE_URL}/${address}/${id}`,
-        fields,
-        {
-          headers: { "Content-Type": "application/json" }, // Set the content type to JSON
-        }
-      );
-
-      // Check if the response contains a message indicating an error
-      if (result.data.message) {
-        dispatch(getFailed(result.data.message)); // Dispatch getFailed with the error message
-      } else {
-        dispatch(stuffDone()); // Dispatch stuffDone to indicate successful update
-      }
-    } catch (error) {
-      dispatch(getError(error));
-    }
-  };
-
-export const removeStuff = (id, address) => async (dispatch) => {
-  dispatch(getRequest()); // Dispatch getRequest to indicate the start of the request
-
-  // Try to make an asynchronous PUT request to the specified URL
   try {
-    const result = await axios.put(
-      `${process.env.REACT_APP_BASE_URL}/${address}/${id}`
-    );
-    // Check if the response contains a message indicating an error
-    if (result.data.message) {
-      dispatch(getFailed(result.data.message)); // Dispatch getFailed with the error message
+    let result;
+    if (address === "StudentAttendance") {
+      result = await classroomApi.updateAttendance(id, fields);
+    } else if (address === "UpdateExamResult") {
+      result = await classroomApi.updateExamResult(id, fields);
     } else {
-      dispatch(stuffDone()); // Dispatch stuffDone to indicate successful removal
+      result = await apiClient.put(`/${address}/${id}`, fields);
+    }
+
+    if (result.data?.message) {
+      dispatch(getFailed(result.data.message));
+    } else {
+      dispatch(stuffDone());
     }
   } catch (error) {
-    dispatch(getError(error));
+    const message = error.response?.data?.message || error.message || "Classroom operation failed";
+    dispatch(getError(message));
+  }
+};
+
+/**
+ * removeStuff: Removes or clears attendance/scores
+ */
+export const removeStuff = (id, address) => async (dispatch) => {
+  dispatch(getRequest());
+
+  try {
+    const result = await apiClient.put(`/${address}/${id}`);
+    if (result.data?.message) {
+      dispatch(getFailed(result.data.message));
+    } else {
+      dispatch(stuffDone());
+    }
+  } catch (error) {
+    const message = error.response?.data?.message || error.message || "Removal operation failed";
+    dispatch(getError(message));
   }
 };

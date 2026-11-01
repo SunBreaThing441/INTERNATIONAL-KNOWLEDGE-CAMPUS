@@ -1,95 +1,139 @@
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+:root {
+  /* Lumina UNESCO Core Palette */
+  --lumina-unesco-blue: #0077D4;
+  --lumina-unesco-blue-light: #0099FF;
+  --lumina-unesco-blue-glow: rgba(0, 119, 212, 0.45);
+  
+  --lumina-emerald: #00C49F;
+  --lumina-emerald-light: #10B981;
+  --lumina-emerald-glow: rgba(0, 196, 159, 0.40);
+  
+  --lumina-amber: #F59E0B;
+  --lumina-crimson: #EF4444;
+  --lumina-violet: #8B5CF6;
+  
+  /* Obsidian & Slate Void Surfaces */
+  --lumina-void-950: #070D1E;
+  --lumina-void-900: #0B132B;
+  --lumina-void-850: #0F1A3A;
+  --lumina-void-800: #14224A;
+  
+  /* Glass Surfaces */
+  --lumina-glass-bg: rgba(11, 19, 43, 0.72);
+  --lumina-glass-card: rgba(15, 26, 58, 0.65);
+  --lumina-glass-card-hover: rgba(20, 34, 74, 0.75);
+  --lumina-glass-subtle: rgba(255, 255, 255, 0.04);
+  
+  /* Specular Borders */
+  --lumina-border-specular: 1px solid rgba(255, 255, 255, 0.12);
+  --lumina-border-active: 1px solid rgba(0, 119, 212, 0.65);
+  --lumina-border-emerald: 1px solid rgba(0, 196, 159, 0.60);
+  
+  /* Elevation Shadows */
+  --lumina-shadow-sm: 0 4px 16px -2px rgba(0, 0, 0, 0.35);
+  --lumina-shadow-md: 0 8px 32px -4px rgba(0, 0, 0, 0.45), 0 0 1px 1px rgba(255, 255, 255, 0.08);
+  --lumina-shadow-glow: 0 16px 48px -8px rgba(0, 0, 0, 0.6), 0 0 32px rgba(0, 119, 212, 0.22);
+  
+  /* Typography */
+  --lumina-text-primary: #F8FAFC;
+  --lumina-text-secondary: #94A3B8;
+  --lumina-text-muted: #64748B;
+}
+
 * {
-  font-family: 'Poppins', sans-serif;
+  font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  box-sizing: border-box;
   margin: 0;
+  padding: 0;
+}
+
+body {
+  background-color: var(--lumina-void-950);
+  background-image: 
+    radial-gradient(circle at 10% 15%, rgba(0, 119, 212, 0.18) 0%, transparent 45%),
+    radial-gradient(circle at 90% 85%, rgba(0, 196, 159, 0.15) 0%, transparent 50%),
+    radial-gradient(circle at 50% 50%, rgba(11, 19, 43, 0.85) 0%, var(--lumina-void-950) 100%);
+  background-attachment: fixed;
+  color: var(--lumina-text-primary);
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 a {
   text-decoration: none;
   color: inherit;
+  transition: all 0.2s ease-in-out;
 }
 
-::-webkit-scrollbar {
-  display: none;
+/* Glassmorphic Universal Utility Classes */
+.lumina-glass {
+  background: var(--lumina-glass-card);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border: var(--lumina-border-specular);
+  border-radius: 16px;
+  box-shadow: var(--lumina-shadow-md);
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-:root {
-  --color-bg: #1f1f38;
-  --color-bg-variant: #2c2c6c;
-  --color-primary: #4db5ff;
-  --color-primary-variant: rgba(77, 181, 255, 0.4);
-  --color-light: rgba(255, 255, 255, 0.6);
+.lumina-glass:hover {
+  border-color: rgba(0, 119, 212, 0.45);
+  box-shadow: var(--lumina-shadow-glow);
 }
 
-/* FORM */
-.register {
-  height: 100vh;
-  display: flex;
-  flex-direction: column;
+.lumina-glass-subtle {
+  background: var(--lumina-glass-subtle);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+}
+
+.lumina-badge {
+  display: inline-flex;
   align-items: center;
-  justify-content: center;
-  /* color: #ffffff; */
-  /* background: linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)), url("https://images.unsplash.com/photo-1510936111840-65e151ad71bb?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=890&q=80"); */
-  /* background-color: var(--color-bg);
-  background-size: cover;
-  background-blend-mode: darken; */
-  font-family: "Josefin Sans", sans-serif;
+  gap: 6px;
+  padding: 4px 12px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border-radius: 9999px;
+  background: rgba(0, 119, 212, 0.15);
+  border: 1px solid rgba(0, 119, 212, 0.4);
+  color: var(--lumina-unesco-blue-light);
 }
 
-.registerTitle {
-  font-size: 50px;
+.lumina-badge.emerald {
+  background: rgba(0, 196, 159, 0.15);
+  border-color: rgba(0, 196, 159, 0.4);
+  color: var(--lumina-emerald);
 }
 
-.registerForm {
-  margin-top: -50px;
-  display: flex;
-  flex-direction: column;
+.lumina-badge.amber {
+  background: rgba(245, 158, 11, 0.15);
+  border-color: rgba(245, 158, 11, 0.4);
+  color: var(--lumina-amber);
 }
 
-.registerForm>label {
-  margin: 10px 0;
-  color: rgb(0, 0, 0);
+/* Custom Sleek Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
 }
 
-.registerInput {
-  padding: 10px;
-  background-color: white;
-  border: none;
-  border-radius: 10px;
+::-webkit-scrollbar-track {
+  background: rgba(7, 13, 30, 0.6);
 }
 
-.registerInput:focus {
-  outline: none;
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.18);
+  border-radius: 3px;
 }
 
-.registerButton {
-  margin-top: 20px;
-  cursor: pointer;
-  background-color: #000000;
-  color: white;
-  padding: 10px;
-  border: none;
-  border-radius: 10px;
-  text-align: center;
-}
-
-.registerButton:hover {
-  background-color: #313131;
-}
-
-@media screen and (max-width: 480px) {
-  .register {
-    background-position: right;
-  }
-
-  .registerInput {
-    font-size: 15px;
-    padding: 15px;
-    border-radius: 8px;
-  }
-
-  .registerButton {
-    font-size: 16px;
-    padding: 20px;
-    border-radius: 12px;
-  }
+::-webkit-scrollbar-thumb:hover {
+  background: var(--lumina-unesco-blue);
 }

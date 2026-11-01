@@ -1,374 +1,385 @@
-/* eslint-disable no-unused-vars */ // Disable eslint warnings for unused variables
-
-import { useEffect, useState } from "react";
-import { useDispatch, useSelector } from 'react-redux';
-import { useNavigate, useParams } from 'react-router-dom'
-import { getClassDetails, getClassStudents, getSubjectList } from "../../../redux/sclassRelated/sclassHandle";
-import { deleteUser } from '../../../redux/userRelated/userHandle';
- 
-import { Button } from '@mui/material';
+import React, { useEffect, useState } from "react";
+import { useDispatch, useSelector } from "react-redux";
+import { useNavigate, useParams } from "react-router-dom";
 import {
-    Box, Container, Typography, Tab,
-} from '@mui/material';
-import TabContext from '@mui/lab/TabContext';
-import TabList from '@mui/lab/TabList';
-import TabPanel from '@mui/lab/TabPanel';
+  getClassDetails,
+  getClassStudents,
+  getSubjectList,
+} from "../../../redux/sclassRelated/sclassHandle";
 import { resetSubjects } from "../../../redux/sclassRelated/sclassSlice";
-import { BlueButton, PurpleButton } from "../../../components/buttonStyles";
+import { deleteUser } from "../../../redux/userRelated/userHandle";
+import {
+  Box,
+  Container,
+  Typography,
+  Tab,
+  Tabs,
+  IconButton,
+  Grid,
+} from "@mui/material";
+import {
+  School,
+  MenuBook,
+  People,
+  Delete as DeleteIcon,
+  PersonRemove,
+  ArrowBack,
+  AutoStories,
+  PersonAdd,
+} from "@mui/icons-material";
+import { BlueButton, GreenButton } from "../../../components/buttonStyles";
 import TableTemplate from "../../../components/TableTemplate";
-import PersonAddAlt1Icon from '@mui/icons-material/PersonAddAlt1';
-import PersonRemoveIcon from '@mui/icons-material/PersonRemove';
-import SpeedDialTemplate from "../../../components/SpeedDialTemplate";
+import { TableSkeleton } from "../../../components/LuminaSkeleton";
 import Popup from "../../../components/Popup";
-import DeleteIcon from "@mui/icons-material/Delete";
-import PostAddIcon from '@mui/icons-material/PostAdd';
-// eslint-disable-next-line no-unused-vars
-import { alignProperty } from "@mui/material/styles/cssUtils";
-// eslint-disable-next-line no-unused-vars
-import { CenterFocusStrong } from "@mui/icons-material";
-const CustomButton = ({ onClick, children }) => {
-    const buttonStyle = {
-        backgroundColor: 'blue',
-        color: 'white',
-        padding: '10px 20px',
-        borderRadius: '5px',
-        border: 'none',
-        cursor: 'pointer',
-        display: 'flex',            // Use flexbox
-        alignItems: 'center',       // Center items vertically
-        justifyContent: 'center',
-        transition: 'background-color 0.3s',
-        '&:hover': {
-            backgroundColor: '#ffea00', // Yellow shade
-        },
-    };
+import styled from "styled-components";
 
-    return (
-        <Button
-            variant="contained"
-            style={buttonStyle}
-            onClick={onClick}
-        >
-            {children}
-        </Button>
-    );
-};
 const ClassDetails = () => {
-    // Initialize necessary hooks and state variables
-    const params = useParams()
-    const navigate = useNavigate()
-    const dispatch = useDispatch();
-    const { subjectsList, sclassStudents, sclassDetails, loading, error, response, getresponse } = useSelector((state) => state.sclass);
+  const params = useParams();
+  const navigate = useNavigate();
+  const dispatch = useDispatch();
 
-    const classID = params.id
+  const {
+    subjectsList,
+    sclassStudents,
+    sclassDetails,
+    loading,
+    getresponse,
+  } = useSelector((state) => state.sclass);
 
-    useEffect(() => {
-        // Fetch class details, subject list, and class students on component mount
-        dispatch(getClassDetails(classID, "Sclass"));
-        dispatch(getSubjectList(classID, "ClassSubjects"))
-        dispatch(getClassStudents(classID));
-    }, [dispatch, classID])
+  const classID = params.id;
+  const [tabValue, setTabValue] = useState(0);
+  const [showPopup, setShowPopup] = useState(false);
+  const [message, setMessage] = useState("");
 
-    if (error) {
-        // Log any errors that occur during data fetching
-        console.log(error)
+  useEffect(() => {
+    if (classID) {
+      dispatch(getClassDetails(classID, "Sclass"));
+      dispatch(getSubjectList(classID, "ClassSubjects"));
+      dispatch(getClassStudents(classID));
     }
+  }, [dispatch, classID]);
 
-    const [value, setValue] = useState('1');
+  const handleTabChange = (event, newValue) => {
+    setTabValue(newValue);
+  };
 
-    const handleChange = (event, newValue) => {
-        setValue(newValue);
-    };
+  // Cascading deletion with dynamic state re-fetch
+  const deleteHandler = (deleteID, address) => {
+    dispatch(deleteUser(deleteID, address)).then(() => {
+      setMessage(`Record removed from cohort registry.`);
+      setShowPopup(true);
+      dispatch(getClassStudents(classID));
+      dispatch(resetSubjects());
+      dispatch(getSubjectList(classID, "ClassSubjects"));
+      dispatch(getClassDetails(classID, "Sclass"));
+    });
+  };
 
-    const [showPopup, setShowPopup] = useState(false);
-    const [message, setMessage] = useState("");
+  // Subjects Section Data
+  const subjectColumns = [
+    { id: "name", label: "Discipline / Subject", minWidth: 200 },
+    { id: "code", label: "Curriculum Code", minWidth: 140 },
+    { id: "sessions", label: "Sessions", minWidth: 100 },
+  ];
 
-    const deleteHandler = (deleteID, address) => {
-        // Handle deletion of subjects or students
-        console.log(deleteID);
-        console.log(address);
+  const subjectRows =
+    Array.isArray(subjectsList) && subjectsList.length > 0
+      ? subjectsList.map((subject) => ({
+          name: subject.subName,
+          code: subject.subCode,
+          sessions: subject.sessions || 30,
+          id: subject._id,
+        }))
+      : [];
 
-        dispatch(deleteUser(deleteID, address))
-            .then(() => {
-                dispatch(getClassStudents(classID));
-                dispatch(resetSubjects())
-                dispatch(getSubjectList(classID, "ClassSubjects"))
-            })
-    }
+  const SubjectsButtonHaver = ({ row }) => (
+    <Box sx={{ display: "flex", alignItems: "center", gap: 1, justifyContent: "center" }}>
+      <BlueButton
+        size="small"
+        variant="contained"
+        onClick={() => navigate(`/Admin/class/subject/${classID}/${row.id}`)}
+      >
+        Inspect
+      </BlueButton>
+      <IconButton
+        size="small"
+        onClick={() => deleteHandler(row.id, "Subject")}
+        sx={{
+          color: "#EF4444",
+          background: "rgba(239, 68, 68, 0.1)",
+          "&:hover": { background: "rgba(239, 68, 68, 0.2)" },
+        }}
+      >
+        <DeleteIcon sx={{ fontSize: 18 }} />
+      </IconButton>
+    </Box>
+  );
 
-    const subjectColumns = [
-        // Define columns for the subjects table
-        { id: 'name', label: 'Subject Name', minWidth: 170 },
-        { id: 'code', label: 'Subject Code', minWidth: 100 },
-    ]
+  // Students Section Data
+  const studentColumns = [
+    { id: "rollNum", label: "Roll No.", minWidth: 100 },
+    { id: "name", label: "Scholar Name", minWidth: 200 },
+  ];
 
-    const subjectRows = subjectsList && subjectsList.length > 0 && subjectsList.map((subject) => {
-        return {
-            // Map subject data to table rows
-            name: subject.subName,
-            code: subject.subCode,
-            id: subject._id,
-        };
-    })
+  const studentRows =
+    Array.isArray(sclassStudents) && sclassStudents.length > 0
+      ? sclassStudents.map((student) => ({
+          rollNum: student.rollNum,
+          name: student.name,
+          id: student._id,
+        }))
+      : [];
 
-    const SubjectsButtonHaver = ({ row }) => {
-        // Define buttons for each row in the subjects table
-        return (
-            <>
-                <CustomButton onClick={() => deleteHandler(row.id, "Subject")}>
-                    <DeleteIcon color="error" />
-                </CustomButton>
-                <BlueButton
-                    variant="contained"
-                    onClick={() => {
-                        navigate(`/Admin/class/subject/${classID}/${row.id}`)
-                    }}
-                >
-                    View
-                </BlueButton >
-            </>
-        );
-    };
+  const StudentsButtonHaver = ({ row }) => (
+    <Box sx={{ display: "flex", alignItems: "center", gap: 1, justifyContent: "center" }}>
+      <BlueButton
+        size="small"
+        variant="contained"
+        onClick={() => navigate(`/Admin/students/student/${row.id}`)}
+      >
+        Profile
+      </BlueButton>
+      <BlueButton
+        size="small"
+        variant="contained"
+        onClick={() => navigate(`/Admin/students/student/attendance/${row.id}`)}
+        sx={{ background: "rgba(168, 85, 247, 0.8) !important" }}
+      >
+        Attendance
+      </BlueButton>
+      <IconButton
+        size="small"
+        onClick={() => deleteHandler(row.id, "Student")}
+        sx={{
+          color: "#EF4444",
+          background: "rgba(239, 68, 68, 0.1)",
+          "&:hover": { background: "rgba(239, 68, 68, 0.2)" },
+        }}
+      >
+        <PersonRemove sx={{ fontSize: 18 }} />
+      </IconButton>
+    </Box>
+  );
 
-    const subjectActions = [
-        // Define actions for the subjects section speed dial
-        {
-            icon: <PostAddIcon color="primary" />, name: 'Add New Subject',
-            action: () => navigate("/Admin/addsubject/" + classID)
-        },
-        {
-            icon: <DeleteIcon color="error" />, name: 'Delete All Subjects',
-            action: () => deleteHandler(classID, "SubjectsClass")
-        }
-    ];
+  return (
+    <Container maxWidth="xl" sx={{ py: 4, mb: 6 }}>
+      {/* Top Breadcrumb & Actions */}
+      <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 3, flexWrap: "wrap", gap: 2 }}>
+        <BackBtn onClick={() => navigate(-1)}>
+          <ArrowBack sx={{ fontSize: 18, mr: 0.5 }} /> Back to Cohorts
+        </BackBtn>
+        <Box sx={{ display: "flex", gap: 1.5 }}>
+          <GreenButton
+            variant="contained"
+            onClick={() => navigate(`/Admin/addsubject/${classID}`)}
+          >
+            + Allocate Subject
+          </GreenButton>
+          <BlueButton
+            variant="contained"
+            onClick={() => navigate(`/Admin/class/addstudents/${classID}`)}
+          >
+            + Admit Scholar
+          </BlueButton>
+        </Box>
+      </Box>
 
-    const ClassSubjectsSection = () => {
-        // Render the class subjects section
-        return (
-            <>
-                {response ?
-                    <Box sx={{ display: 'flex', justifyContent: 'center', marginTop: '16px',paddinTop:'15px' }}>
-                        <Button
-                            variant="contained"
-                            onClick={() => navigate("/Admin/addsubject/" + classID)}
-                        >
-                            Add Subjects
-                        </Button>
-                    </Box>
-                    :
-                    <>
-                        <Typography variant="h5" gutterBottom>
-                            Subjects List:
-                        </Typography>
+      {/* Cohort Header Dossier */}
+      <HeaderCard>
+        <Box sx={{ display: "flex", alignItems: "center", gap: 2.5, flexWrap: "wrap" }}>
+          <IconWrapper>
+            <School sx={{ fontSize: 32, color: "#00A3FF" }} />
+          </IconWrapper>
+          <Box sx={{ flexGrow: 1 }}>
+            <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 0.5 }}>
+              <span className="lumina-badge cyan">UNESCO Standard 4.1</span>
+              <span className="lumina-badge">Academic Cohort</span>
+            </Box>
+            <Typography variant="h4" sx={{ fontWeight: 800, color: "#F8FAFC", letterSpacing: "-0.02em" }}>
+              {sclassDetails?.sclassName || "Academic Cohort Dossier"}
+            </Typography>
+            <Typography variant="body2" sx={{ color: "#94A3B8" }}>
+              Standardized curriculum track • ID: {classID}
+            </Typography>
+          </Box>
+        </Box>
 
-                        <TableTemplate buttonHaver={SubjectsButtonHaver} columns={subjectColumns} rows={subjectRows} />
-                        <SpeedDialTemplate actions={subjectActions} />
-                    </>
-                }
-            </>
-        )
-    }
+        {/* Live Metrics Grid */}
+        <Grid container spacing={2} sx={{ mt: 2 }}>
+          <Grid item xs={6} sm={3}>
+            <MetricTile>
+              <People sx={{ fontSize: 20, color: "#00A3FF" }} />
+              <Box>
+                <Typography variant="caption" sx={{ color: "#94A3B8", fontWeight: 700 }}>
+                  Enrolled Scholars
+                </Typography>
+                <Typography variant="h6" sx={{ color: "#F8FAFC", fontWeight: 800 }}>
+                  {studentRows.length}
+                </Typography>
+              </Box>
+            </MetricTile>
+          </Grid>
+          <Grid item xs={6} sm={3}>
+            <MetricTile>
+              <MenuBook sx={{ fontSize: 20, color: "#00C49F" }} />
+              <Box>
+                <Typography variant="caption" sx={{ color: "#94A3B8", fontWeight: 700 }}>
+                  Active Subjects
+                </Typography>
+                <Typography variant="h6" sx={{ color: "#F8FAFC", fontWeight: 800 }}>
+                  {subjectRows.length}
+                </Typography>
+              </Box>
+            </MetricTile>
+          </Grid>
+        </Grid>
+      </HeaderCard>
 
-    const studentColumns = [
-        // Define columns for the students table
-        { id: 'name', label: 'Name', minWidth: 170 },
-        { id: 'rollNum', label: 'Roll Number', minWidth: 100 },
-    ]
+      {/* Tabs */}
+      <GlassTabsContainer>
+        <Tabs
+          value={tabValue}
+          onChange={handleTabChange}
+          textColor="inherit"
+          sx={{
+            "& .MuiTabs-indicator": { backgroundColor: "#00A3FF", height: 3 },
+            "& .MuiTab-root": {
+              color: "#94A3B8",
+              fontWeight: 700,
+              textTransform: "none",
+              fontSize: "0.95rem",
+              "&.Mui-selected": { color: "#00A3FF" },
+            },
+          }}
+        >
+          <Tab icon={<AutoStories sx={{ fontSize: 18 }} />} iconPosition="start" label={`Curriculum Disciplines (${subjectRows.length})`} />
+          <Tab icon={<People sx={{ fontSize: 18 }} />} iconPosition="start" label={`Scholar Roster (${studentRows.length})`} />
+        </Tabs>
+      </GlassTabsContainer>
 
-    const studentRows = sclassStudents.map((student) => {
-        return {
-            // Map student data to table rows
-            name: student.name,
-            rollNum: student.rollNum,
-            id: student._id,
-        };
-    })
-
-    const StudentsButtonHaver = ({ row }) => {
-        // Define buttons for each row in the students table
-        return (
-            <>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                    <CustomButton onClick={() => deleteHandler(row.id, "Student")}>
-                        <PersonRemoveIcon color="error" />
-                    </CustomButton>
-                    <BlueButton
-                        variant="contained"
-                        onClick={() => navigate("/Admin/students/student/" + row.id)}
-                    >
-                        View
-                    </BlueButton>
-                    <PurpleButton
-                        variant="contained"
-                        onClick={() => navigate("/Admin/students/student/attendance/" + row.id)}
-                    >
-                        Attendance
-                    </PurpleButton>
-                </div>
-
-            </>
-        );
-    };
-
-    const studentActions = [
-        // Define actions for the students section speed dial
-        {
-            icon: <PersonAddAlt1Icon color="primary" />, name: 'Add New Student',
-            action: () => navigate("/Admin/class/addstudents/" + classID)
-        },
-        {
-            icon: <PersonRemoveIcon color="error" />, name: 'Delete All Students',
-            action: () => deleteHandler(classID, "StudentsClass")
-        },
-    ];
-
-    const ClassStudentsSection = () => {
-        // Render the class students section
-        return (
-            <>
-                {getresponse ? (
-                    <>
-                        <Box sx={{ width: '100%', display: 'flex', justifyContent: 'center', marginTop: '16px' }}>
-                            <Button
-                                variant="contained"
-                                onClick={() => navigate("/Admin/class/addstudents/" + classID)}
-                            >
-                                Add Students
-                            </Button>
-                        </Box>
-
-                    </>
-                ) : (
-                    <>
-
-                        <Box
-                            sx={{
-                                boxShadow: '0px 4px 10px rgba(0, 0, 0, 0.1)', // Apply box shadow
-                                padding: '20px', // Add some padding for spacing
-                                borderRadius: '10px', // Optional: Add border radius for rounded corners
-                                backgroundColor: '#ffffff',
-                                width: '100%' // Set background color to white
-                            }}
-                        >
-                            <Typography variant="h5" gutterBottom>
-                                <span style={{ fontFamily: 'Times New Roman', fontWeight: 'bold', textAlign: 'center' }}>Student Lists:</span>
-                            </Typography>
-                            <TableTemplate buttonHaver={StudentsButtonHaver} columns={studentColumns} rows={studentRows} />
-                            <SpeedDialTemplate actions={studentActions} />
-                        </Box>
-
-                    </>
-                )}
-            </>
-        )
-    }
-
-    const ClassTeachersSection = () => {
-        // Render the class teachers section
-        return (
-            <>
-                <Box
-                    sx={{
-                        boxShadow: '0px 4px 10px rgba(0, 0, 0, 0.1)', // Apply box shadow
-                        padding: '20px', // Add some padding for spacing
-                        borderRadius: '10px', // Optional: Add border radius for rounded corners
-                        backgroundColor: '#ffffff',
-                        width: '100%' // Set background color to white
-                    }}
-                ><span style={{ fontFamily: 'Times New Roman', fontWeight: 'bold', textAlign: 'center' }}>Teachers:</span></Box>
-            </>
-        )
-    }
-
-    const ClassDetailsSection = () => {
-        // Render the class details section
-        const numberOfSubjects = subjectsList.length;
-        const numberOfStudents = sclassStudents.length;
-
-        return (
-            <>
-                <box sx={{ width: '100%', typography: 'body1', }}>
-                    <Box sx={{
-                        boxShadow: '0px 4px 10px rgba(0, 0, 0, 0.1)', // Apply box shadow
-                        padding: '20px', // Add some padding for spacing
-                        borderRadius: '10px',
-                        backgroundcolor: '#ffffff',// Optional: Add border radius for rounded corners
-                    }}>
-                        <Typography variant="h4" align="center" gutterBottom>
-                            <span style={{ fontFamily: 'Times New Roman', fontWeight: 'bold', }}>Class Details</span> {/* Change font family, weight, and style */}
-                        </Typography>
-                        <Typography variant="h5" gutterBottom>
-                            Welcome to the Class {sclassDetails && sclassDetails.sclassName}
-                        </Typography>
-                        <Typography variant="h6" gutterBottom>
-                            Number of Subjects: {numberOfSubjects}
-                        </Typography>
-                        <Typography variant="h6" gutterBottom>
-                            Number of Students: {numberOfStudents}
-                        </Typography>
-                    </Box>
-                    {getresponse && response && (
-                        <div style={{ display: 'flex', gap: '10px' }}>
-                            <Button
-                                // Button to navigate to add students page
-                                variant="contained"
-                                onClick={() => navigate("/Admin/class/addstudents/" + classID)}
-                            >
-                                Add Students
-                            </Button>
-                            <Button
-                                // Button to navigate to add subjects page
-                                variant="contained"
-                                onClick={() => navigate("/Admin/addsubject/" + classID)}
-                            >
-                                Add Subjects
-                            </Button>
-                        </div>)}
-                </box>
-            </>
-
-
-        );
-    }
-
-    return (
-        // Render the main component structure
+      {/* Tab Panels */}
+      {loading ? (
+        <TableSkeleton rows={4} columns={3} />
+      ) : (
         <>
-            {loading ? (
-                <div>Loading...</div>
-            ) : (
-                <>
-                    <Box sx={{ width: '100%', typography: 'body1', }} >
-                        <TabContext value={value}>
-                            <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
-                                <TabList onChange={handleChange} sx={{ position: 'fixed', width: '100%', bgcolor: 'background.paper', zIndex: 1 }}> {/* Tab list for navigation */}
-                                    <Tab label="Details" value="1" /> {/* Tab for class details */}
-                                    {/* <Tab label="Subjects" value="2" /> */}
-                                    <Tab label="Students" value="3" />
-                                    <Tab label="Teachers" value="4" />
-                                </TabList>
-                            </Box>
-                            <Container sx={{ marginTop: "3rem", marginBottom: "4rem" }}>
-                                <TabPanel value="1">
-                                    <ClassDetailsSection />
-                                </TabPanel>
-                                <TabPanel value="2">
-                                    <ClassSubjectsSection />
-                                </TabPanel>
-                                <TabPanel value="3">
-                                    <ClassStudentsSection />
-                                </TabPanel>
-                                <TabPanel value="4">
-                                    <ClassTeachersSection />
-                                </TabPanel>
-                            </Container>
-                        </TabContext>
-                    </Box>
-                </>
-            )}
-            <Popup message={message} setShowPopup={setShowPopup} showPopup={showPopup} />
+          {tabValue === 0 && (
+            <Box sx={{ mt: 3 }}>
+              {subjectRows.length === 0 ? (
+                <EmptyGlassState>
+                  <AutoStories sx={{ fontSize: 44, color: "#00C49F", mb: 1.5 }} />
+                  <Typography variant="h6" sx={{ color: "#F8FAFC", fontWeight: 700 }}>
+                    No Academic Disciplines Allocated
+                  </Typography>
+                  <Typography variant="body2" sx={{ color: "#94A3B8", mt: 0.5, mb: 2 }}>
+                    Add core curriculum subjects, assign course codes, and scheduled teaching sessions.
+                  </Typography>
+                  <GreenButton variant="contained" onClick={() => navigate(`/Admin/addsubject/${classID}`)}>
+                    + Allocate First Subject
+                  </GreenButton>
+                </EmptyGlassState>
+              ) : (
+                <TableTemplate
+                  buttonHaver={SubjectsButtonHaver}
+                  columns={subjectColumns}
+                  rows={subjectRows}
+                />
+              )}
+            </Box>
+          )}
+
+          {tabValue === 1 && (
+            <Box sx={{ mt: 3 }}>
+              {getresponse || studentRows.length === 0 ? (
+                <EmptyGlassState>
+                  <PersonAdd sx={{ fontSize: 44, color: "#00A3FF", mb: 1.5 }} />
+                  <Typography variant="h6" sx={{ color: "#F8FAFC", fontWeight: 700 }}>
+                    No Scholars Enrolled in Cohort
+                  </Typography>
+                  <Typography variant="body2" sx={{ color: "#94A3B8", mt: 0.5, mb: 2 }}>
+                    Admit students directly into this cohort to begin tracking attendance and academic records.
+                  </Typography>
+                  <BlueButton variant="contained" onClick={() => navigate(`/Admin/class/addstudents/${classID}`)}>
+                    + Admit First Scholar
+                  </BlueButton>
+                </EmptyGlassState>
+              ) : (
+                <TableTemplate
+                  buttonHaver={StudentsButtonHaver}
+                  columns={studentColumns}
+                  rows={studentRows}
+                />
+              )}
+            </Box>
+          )}
         </>
-    );
+      )}
+
+      <Popup message={message} setShowPopup={setShowPopup} showPopup={showPopup} />
+    </Container>
+  );
 };
 
 export default ClassDetails;
+
+const HeaderCard = styled(Box)`
+  background: rgba(13, 22, 41, 0.75);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 20px;
+  padding: 28px;
+  margin-bottom: 24px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+`;
+
+const IconWrapper = styled(Box)`
+  width: 60px;
+  height: 60px;
+  border-radius: 16px;
+  background: rgba(0, 163, 255, 0.12);
+  border: 1px solid rgba(0, 163, 255, 0.25);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+`;
+
+const MetricTile = styled(Box)`
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 12px;
+  padding: 12px 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+`;
+
+const GlassTabsContainer = styled(Box)`
+  background: rgba(13, 22, 41, 0.6);
+  backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 14px;
+  padding: 4px 12px;
+`;
+
+const EmptyGlassState = styled(Box)`
+  background: rgba(13, 22, 41, 0.6);
+  backdrop-filter: blur(16px);
+  border: 1px dashed rgba(255, 255, 255, 0.12);
+  border-radius: 18px;
+  padding: 48px 24px;
+  text-align: center;
+`;
+
+const BackBtn = styled.button`
+  background: transparent;
+  border: none;
+  color: #94a3b8;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  font-weight: 600;
+  font-size: 0.9rem;
+  transition: all 0.2s;
+  &:hover {
+    color: #f8fafc;
+  }
+`;

@@ -25,8 +25,8 @@ import TeacherViewStudent from "./TeacherViewStudent";
 import StudentExamMarks from "../admin/studentRelated/StudentExamMarks";
 
 const TeacherDashboard = () => {
-  // State to manage the drawer's open/close state
-  const [open, setOpen] = useState(false);
+  // State to manage the drawer's open/close state (open by default on desktop)
+  const [open, setOpen] = useState(window.innerWidth >= 960);
   const toggleDrawer = () => {
     setOpen(!open);
   };
@@ -34,13 +34,9 @@ const TeacherDashboard = () => {
   return (
     // Main container for the teacher dashboard
     <>
-      <Box sx={{ display: "flex" }}>
+      <Box sx={{ display: "flex", height: "100vh", overflow: "hidden" }}>
         <CssBaseline />
-        <AppBar
-          open={open}
-          position="absolute"
-          sx={{ backgroundColor: "darkblue" }}
-        >
+        <AppBar open={open} position="absolute">
           {/* Toolbar for the app bar */}
           <Toolbar sx={{ pr: "24px" }}>
             <IconButton
@@ -49,23 +45,26 @@ const TeacherDashboard = () => {
               aria-label="open drawer"
               onClick={toggleDrawer}
               sx={{
-                marginRight: "36px",
+                marginRight: "28px",
                 ...(open && { display: "none" }),
               }}
             >
-              <MenuIcon />
+              <MenuIcon sx={{ color: "#00C49F" }} />
             </IconButton>
-            {/* Title of the dashboard */}
-            <Typography
-              component="h1"
-              variant="h6"
-              color="inherit"
-              noWrap
-              sx={{ flexGrow: 1 }}
-            >
-              Teacher Dashboard
-            </Typography>
-            {/* Account menu component */}
+            <Box sx={{ flexGrow: 1, display: "flex", alignItems: "center", gap: 1.5, minWidth: 0 }}>
+              <Typography
+                component="h1"
+                variant="h6"
+                color="inherit"
+                noWrap
+                sx={{ fontWeight: 800, letterSpacing: "-0.01em", flexShrink: 0 }}
+              >
+                LUMINA <span style={{ color: "#00C49F" }}>ACADEMIC MENTOR</span>
+              </Typography>
+              <span className="lumina-badge emerald" style={{ whiteSpace: "nowrap", flexShrink: 0 }}>
+                Faculty Terminal
+              </span>
+            </Box>
             <AccountMenu />
           </Toolbar>
         </AppBar>
@@ -83,7 +82,7 @@ const TeacherDashboard = () => {
           <Divider />
           {/* Sidebar component */}
           <List component="nav">
-            <TeacherSideBar />
+            <TeacherSideBar open={open} />
           </List>
         </Drawer>
         {/* Main content area */}
@@ -91,28 +90,27 @@ const TeacherDashboard = () => {
           <Toolbar />
           <Routes>
             <Route path="/" element={<TeacherHomePage />} />
-            <Route path="*" element={<Navigate to="/" />} />
-            <Route path="/Teacher/dashboard" element={<TeacherHomePage />} />
-            <Route path="/Teacher/profile" element={<TeacherProfile />} />
+            <Route path="dashboard" element={<TeacherHomePage />} />
+            <Route path="profile" element={<TeacherProfile />} />
+            <Route path="complain" element={<TeacherComplain />} />
 
-            <Route path="/Teacher/complain" element={<TeacherComplain />} />
-
-            <Route path="/Teacher/class" element={<TeacherClassDetails />} />
+            <Route path="class" element={<TeacherClassDetails />} />
             <Route
-              path="/Teacher/class/student/:id"
+              path="class/student/:id"
               element={<TeacherViewStudent />}
             />
 
             <Route
-              path="/Teacher/class/student/attendance/:studentID/:subjectID"
+              path="class/student/attendance/:studentID/:subjectID"
               element={<StudentAttendance situation="Subject" />}
             />
             <Route
-              path="/Teacher/class/student/marks/:studentID/:subjectID"
+              path="class/student/marks/:studentID/:subjectID"
               element={<StudentExamMarks situation="Subject" />}
             />
 
-            <Route path="/logout" element={<Logout />} />
+            <Route path="logout" element={<Logout />} />
+            <Route path="*" element={<Navigate to="dashboard" replace />} />
           </Routes>
         </Box>
       </Box>
@@ -125,10 +123,8 @@ export default TeacherDashboard;
 const styles = {
   // Styles for the main content area
   boxStyled: {
-    backgroundColor: (theme) =>
-      theme.palette.mode === "light"
-        ? theme.palette.grey[100]
-        : theme.palette.grey[900],
+    backgroundColor: "transparent",
+    color: "#F8FAFC",
     flexGrow: 1,
     height: "100vh",
     overflow: "auto",

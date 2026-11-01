@@ -1,4 +1,4 @@
-import axios from "axios";
+import { classroomApi, academicApi } from "../../api/apiClient";
 import {
   getRequest,
   getSuccess,
@@ -8,63 +8,57 @@ import {
   doneSuccess,
 } from "./teacherSlice";
 
-//const REACT_APP_BASE_URL="http://localhost:5000"
-
-// Async action to fetch all teachers
+/**
+ * getAllTeachers: Fetches all faculty mentors for a school.
+ * Endpoint: GET /Teachers/:id
+ */
 export const getAllTeachers = (id) => async (dispatch) => {
-  dispatch(getRequest()); // Dispatch getRequest to indicate the start of the request
+  dispatch(getRequest());
 
-  // Try to make an asynchronous GET request to the specified URL
   try {
-    const result = await axios.get(
-      `${process.env.REACT_APP_BASE_URL}/Teachers/${id}`
-    );
-    // Check if the response contains a message indicating an error
+    const result = await classroomApi.getTeachers(id);
     if (result.data.message) {
-      dispatch(getFailed(result.data.message)); // Dispatch getFailed with the error message
+      dispatch(getFailed(result.data.message));
     } else {
-      dispatch(getSuccess(result.data)); // Dispatch getSuccess with the retrieved data
+      dispatch(getSuccess(result.data));
     }
   } catch (error) {
-    dispatch(getError(error));
+    const message = error.response?.data?.message || error.message || "Failed to retrieve faculty list";
+    dispatch(getError(message));
   }
 };
 
+/**
+ * getTeacherDetails: Fetches individual teacher profile.
+ * Endpoint: GET /Teacher/:id
+ */
 export const getTeacherDetails = (id) => async (dispatch) => {
-  dispatch(getRequest()); // Dispatch getRequest to indicate the start of the request
+  dispatch(getRequest());
 
-  // Try to make an asynchronous GET request to the specified URL
   try {
-    const result = await axios.get(
-      `${process.env.REACT_APP_BASE_URL}/Teacher/${id}`
-    );
-
-    // Dispatch doneSuccess with the retrieved data
+    const result = await classroomApi.getTeacherDetail(id);
     if (result.data) {
       dispatch(doneSuccess(result.data));
     }
   } catch (error) {
-    dispatch(getError(error));
+    const message = error.response?.data?.message || error.message || "Failed to retrieve teacher details";
+    dispatch(getError(message));
   }
 };
 
+/**
+ * updateTeachSubject: Assigns a subject to a teacher.
+ * Endpoint: PUT /TeacherSubject
+ */
 export const updateTeachSubject =
   (teacherId, teachSubject) => async (dispatch) => {
-    dispatch(getRequest()); // Dispatch getRequest to indicate the start of the request
+    dispatch(getRequest());
 
-    // Try to make an asynchronous PUT request to the specified URL
     try {
-      await axios.put(
-        `${process.env.REACT_APP_BASE_URL}/TeacherSubject`,
-        { teacherId, teachSubject },
-        {
-          headers: { "Content-Type": "application/json" }, // Set the content type to JSON
-        }
-      );
-
-      dispatch(postDone()); // Dispatch postDone to indicate successful update
-
+      await academicApi.updateTeacherSubject({ teacherId, teachSubject });
+      dispatch(postDone());
     } catch (error) {
-      dispatch(getError(error));
+      const message = error.response?.data?.message || error.message || "Failed to assign subject to teacher";
+      dispatch(getError(message));
     }
   };

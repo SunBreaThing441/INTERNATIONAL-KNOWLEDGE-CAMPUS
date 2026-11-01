@@ -1,4 +1,3 @@
-// Import necessary modules and components from Material-UI and React
 import React, { useState } from "react";
 import {
   Box,
@@ -9,55 +8,71 @@ import {
   Divider,
   IconButton,
   Tooltip,
+  Typography,
 } from "@mui/material";
-
-// Import icons from Material-UI
-// eslint-disable-next-line no-unused-vars
-import { Settings, Logout } from "@mui/icons-material";
+import { Logout, Person } from "@mui/icons-material";
 import { Link } from "react-router-dom";
 import { useSelector } from "react-redux";
 
-// Define the AccountMenu component
 const AccountMenu = () => {
-  // State to manage the anchor element for the menu
   const [anchorEl, setAnchorEl] = useState(null);
-
-  // Determine if the menu is open
   const open = Boolean(anchorEl);
 
-  // Access current user and role from the Redux store
   const { currentRole, currentUser } = useSelector((state) => state.user);
 
-  // Handle click event to open the menu
   const handleClick = (event) => {
     setAnchorEl(event.currentTarget);
   };
-  // Handle close event to close the menu
   const handleClose = () => {
     setAnchorEl(null);
   };
+
+  const getRoleColor = (role) => {
+    if (role === "Admin") return "#00A3FF";
+    if (role === "Teacher") return "#00C49F";
+    return "#A855F7";
+  };
+
+  const roleColor = getRoleColor(currentRole);
+
   return (
     <>
       <Box sx={{ display: "flex", alignItems: "center", textAlign: "center" }}>
-        <Tooltip title="Account settings">
-          {/* IconButton to trigger the menu */}
+        <Tooltip title="Ecosystem Identity">
           <IconButton
             onClick={handleClick}
             size="small"
-            sx={{ ml: 2 }}
+            sx={{
+              ml: 1.5,
+              border: `2px solid ${roleColor}60`,
+              boxShadow: `0 0 12px ${roleColor}30`,
+              transition: "all 0.2s",
+              "&:hover": {
+                borderColor: roleColor,
+                transform: "scale(1.05)",
+              },
+            }}
             aria-controls={open ? "account-menu" : undefined}
             aria-haspopup="true"
             aria-expanded={open ? "true" : undefined}
           >
-            {/* Avatar component to display user's initial */}
-            <Avatar sx={{ width: 32, height: 32 }}>
-              {String(currentUser.name).charAt(0)}
+            <Avatar
+              sx={{
+                width: 34,
+                height: 34,
+                bgcolor: "rgba(0, 119, 212, 0.25)",
+                color: "#F8FAFC",
+                fontWeight: 700,
+                fontSize: "0.95rem",
+              }}
+            >
+              {currentUser?.name ? String(currentUser.name).charAt(0).toUpperCase() : "U"}
             </Avatar>
           </IconButton>
         </Tooltip>
       </Box>
+
       <Menu
-        // Menu component to display options
         anchorEl={anchorEl}
         id="account-menu"
         open={open}
@@ -65,23 +80,43 @@ const AccountMenu = () => {
         onClick={handleClose}
         PaperProps={{
           elevation: 0,
-          sx: styles.styledPaper,
+          sx: {
+            background: "rgba(11, 19, 43, 0.92)",
+            backdropFilter: "blur(20px)",
+            border: "1px solid rgba(255, 255, 255, 0.12)",
+            borderRadius: "14px",
+            boxShadow: "0 16px 40px rgba(0, 0, 0, 0.6)",
+            minWidth: 200,
+            color: "#F8FAFC",
+            p: 1,
+            mt: 1.5,
+          },
         }}
         transformOrigin={{ horizontal: "right", vertical: "top" }}
         anchorOrigin={{ horizontal: "right", vertical: "bottom" }}
       >
-        {/* MenuItem for profile navigation */}
-        <MenuItem>
-          <Avatar />
-          <Link to={`/${currentRole}/profile`}>Profile</Link>
+        <Box sx={{ px: 2, py: 1.5 }}>
+          <Typography variant="subtitle2" sx={{ fontWeight: 800, color: "#F8FAFC" }}>
+            {currentUser?.name || "Authenticated User"}
+          </Typography>
+          <Typography variant="caption" sx={{ color: roleColor, fontWeight: 700, textTransform: "uppercase" }}>
+            {currentRole === "Admin" ? "Chancellor" : currentRole === "Teacher" ? "Academic Mentor" : "Global Scholar"}
+          </Typography>
+        </Box>
+        <Divider sx={{ my: 0.5, borderColor: "rgba(255, 255, 255, 0.08)" }} />
+
+        <MenuItem component={Link} to={`/${currentRole}/profile`} sx={{ borderRadius: "8px", my: 0.5 }}>
+          <ListItemIcon sx={{ color: "#00A3FF", minWidth: 32 }}>
+            <Person fontSize="small" />
+          </ListItemIcon>
+          <Typography variant="body2" sx={{ fontWeight: 600 }}>Dossier & Profile</Typography>
         </MenuItem>
-        <Divider />
-        {/* MenuItem for logout navigation */}
-        <MenuItem>
-          <ListItemIcon>
+
+        <MenuItem component={Link} to="/logout" sx={{ borderRadius: "8px", my: 0.5, color: "#EF4444" }}>
+          <ListItemIcon sx={{ color: "#EF4444", minWidth: 32 }}>
             <Logout fontSize="small" />
           </ListItemIcon>
-          <Link to="/logout">Logout</Link>
+          <Typography variant="body2" sx={{ fontWeight: 600 }}>Sign Out</Typography>
         </MenuItem>
       </Menu>
     </>
@@ -89,31 +124,3 @@ const AccountMenu = () => {
 };
 
 export default AccountMenu;
-
-// Styles for the menu paper
-const styles = {
-  styledPaper: {
-    overflow: "visible",
-    filter: "drop-shadow(0px 2px 8px rgba(0,0,0,0.32))",
-    mt: 1.5,
-    "& .MuiAvatar-root": {
-      width: 32,
-      height: 32,
-      ml: -0.5,
-      mr: 1,
-    },
-    
-    "&:before": {
-      content: '""',
-      display: "block",
-      position: "absolute",
-      top: 0,
-      right: 14,
-      width: 10,
-      height: 10,
-      bgcolor: "background.paper",
-      transform: "translateY(-50%) rotate(45deg)",
-      zIndex: 0,
-    },
-  },
-};

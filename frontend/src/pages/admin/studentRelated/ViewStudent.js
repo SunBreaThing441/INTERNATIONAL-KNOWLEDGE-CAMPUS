@@ -1,449 +1,402 @@
-/* eslint-disable no-unused-vars */
-import React, { useEffect, useState } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
-import { deleteUser, getUserDetails, updateUser } from '../../../redux/userRelated/userHandle';
-import { useNavigate, useParams } from 'react-router-dom'
-import { getSubjectList } from '../../../redux/sclassRelated/sclassHandle';
-import { Box, Button, Collapse, IconButton, Table, TableBody, TableHead, Typography, Tab, Paper, BottomNavigation, BottomNavigationAction, Container } from '@mui/material';
-import TabContext from '@mui/lab/TabContext';
-import TabList from '@mui/lab/TabList';
-import TabPanel from '@mui/lab/TabPanel';
-import { KeyboardArrowUp, KeyboardArrowDown, Delete as DeleteIcon } from '@mui/icons-material';
-import { removeStuff, updateStudentFields } from '../../../redux/studentRelated/studentHandle';
-import { calculateOverallAttendancePercentage, calculateSubjectAttendancePercentage, groupAttendanceBySubject } from '../../../components/attendanceCalculator';
-import CustomBarChart from '../../../components/CustomBarChart'
-import CustomPieChart from '../../../components/CustomPieChart'
-import { StyledTableCell, StyledTableRow } from '../../../components/styles';
+import React, { useEffect, useState } from "react";
+import { useDispatch, useSelector } from "react-redux";
+import { useNavigate, useParams } from "react-router-dom";
+import { getUserDetails, deleteUser } from "../../../redux/userRelated/userHandle";
+import {
+  Box,
+  Container,
+  Typography,
+  Avatar,
+  Grid,
+  Tabs,
+  Tab,
+  IconButton,
+  Tooltip,
+} from "@mui/material";
+import {
+  School,
+  ArrowBack,
+  Badge,
+  Delete as DeleteIcon,
+  CheckCircle,
+  AccountBalance,
+  BarChart,
+  Grade,
+  AssignmentTurnedIn,
+} from "@mui/icons-material";
+import {
+  calculateOverallAttendancePercentage,
+  groupAttendanceBySubject,
+} from "../../../components/attendanceCalculator";
+import CustomPieChart from "../../../components/CustomPieChart";
+import { BlueButton, GreenButton } from "../../../components/buttonStyles";
+import TableTemplate from "../../../components/TableTemplate";
+import { TableSkeleton } from "../../../components/LuminaSkeleton";
+import Popup from "../../../components/Popup";
+import styled from "styled-components";
 
-import InsertChartIcon from '@mui/icons-material/InsertChart';
-import InsertChartOutlinedIcon from '@mui/icons-material/InsertChartOutlined';
-import TableChartIcon from '@mui/icons-material/TableChart';
-import TableChartOutlinedIcon from '@mui/icons-material/TableChartOutlined';
-import Popup from '../../../components/Popup';
-
-// Component to view student details, attendance, and marks
 const ViewStudent = () => {
-    const [showTab, setShowTab] = useState(false);
+  const navigate = useNavigate();
+  const params = useParams();
+  const dispatch = useDispatch();
 
-    const navigate = useNavigate()
-    const params = useParams()
-    const dispatch = useDispatch()
-    const { userDetails, response, loading, error } = useSelector((state) => state.user);
+  const { userDetails, loading } = useSelector((state) => state.user);
+  const studentID = params.id;
+  const address = "Student";
 
-    const studentID = params.id
-    const address = "Student"
+  const [tabValue, setTabValue] = useState(0);
+  const [showPopup, setShowPopup] = useState(false);
+  const [message, setMessage] = useState("");
 
-    // Fetch student details on component mount
-    useEffect(() => {
-        dispatch(getUserDetails(studentID, address));
-    }, [dispatch, studentID])
-
-    useEffect(() => {
-        // Fetch subject list if student details and class are available
-        if (userDetails && userDetails.sclassName && userDetails.sclassName._id !== undefined) {
-            dispatch(getSubjectList(userDetails.sclassName._id, "ClassSubjects"));
-        }
-    }, [dispatch, userDetails]);
-
-    if (response) { console.log(response) }
-    else if (error) { console.log(error) }
-
-    const [name, setName] = useState('');
-    const [rollNum, setRollNum] = useState('');
-    const [password, setPassword] = useState('');
-    const [sclassName, setSclassName] = useState('');
-    const [studentSchool, setStudentSchool] = useState('');
-    const [subjectMarks, setSubjectMarks] = useState('');
-    const [subjectAttendance, setSubjectAttendance] = useState([]);
-
-    const [openStates, setOpenStates] = useState({});
-
-    const [showPopup, setShowPopup] = useState(false);
-    const [message, setMessage] = useState("");
-
-    // Toggle the open state of a subject's details
-    const handleOpen = (subId) => {
-        setOpenStates((prevState) => ({
-            ...prevState,
-            [subId]: !prevState[subId],
-        }));
-    };
-
-    // State and handler for tab changes
-    const [value, setValue] = useState('1');
-
-    const handleChange = (event, newValue) => {
-        setValue(newValue);
-    };
-    // State and handler for section changes (table/chart)
-
-    const [selectedSection, setSelectedSection] = useState('table');
-    const handleSectionChange = (event, newSection) => {
-        setSelectedSection(newSection);
-    };
-
-    const fields = password === ""
-        ? { name, rollNum }
-        : { name, rollNum, password }
-
-    useEffect(() => {
-        // Update state variables when userDetails change
-        if (userDetails) {
-            setName(userDetails.name || '');
-            setRollNum(userDetails.rollNum || '');
-            setSclassName(userDetails.sclassName || '');
-            setStudentSchool(userDetails.school || '');
-            setSubjectMarks(userDetails.examResult || '');
-            setSubjectAttendance(userDetails.attendance || []);
-        }
-    }, [userDetails]);
-
-    // Handle form submission to update student details
-    const submitHandler = (event) => {
-        event.preventDefault()
-        dispatch(updateUser(fields, studentID, address))
-            .then(() => {
-                dispatch(getUserDetails(studentID, address));
-            })
-            .catch((error) => {
-                console.error(error)
-            })
+  useEffect(() => {
+    if (studentID) {
+      dispatch(getUserDetails(studentID, address));
     }
+  }, [dispatch, studentID]);
 
-    // Handle student deletion
-    const deleteHandler = () => {
-        dispatch(deleteUser(studentID, address))
-            .then(() => {
-                navigate(-1)
-            })
-    }
-
-    // Handle removal of student data (attendance/marks)
-    const removeHandler = (id, deladdress) => {
-        dispatch(removeStuff(id, deladdress))
-            .then(() => {
-                dispatch(getUserDetails(studentID, address));
-            })
-    }
-
-    // Handle removal of a specific subject's attendance
-    const removeSubAttendance = (subId) => {
-        dispatch(updateStudentFields(studentID, { subId }, "RemoveStudentSubAtten"))
-            .then(() => {
-                dispatch(getUserDetails(studentID, address));
-            })
-    }
-
-    // Calculate overall attendance percentages
-    const overallAttendancePercentage = calculateOverallAttendancePercentage(subjectAttendance);
-    const overallAbsentPercentage = 100 - overallAttendancePercentage;
-
-    const chartData = [
-        { name: 'Present', value: overallAttendancePercentage },
-        // Data for the pie chart
-        { name: 'Absent', value: overallAbsentPercentage }
-    ];
-
-    const subjectData = Object.entries(groupAttendanceBySubject(subjectAttendance)).map(([subName, { subCode, present, sessions }]) => {
-        const subjectAttendancePercentage = calculateSubjectAttendancePercentage(present, sessions);
-        return {
-            subject: subName,
-            attendancePercentage: subjectAttendancePercentage,
-            totalClasses: sessions,
-            attendedClasses: present
-        };
+  const deleteHandler = () => {
+    dispatch(deleteUser(studentID, address)).then(() => {
+      setMessage("Scholar credentials revoked and purged.");
+      setShowPopup(true);
+      setTimeout(() => {
+        navigate("/Admin/students");
+      }, 700);
     });
+  };
 
-    // Component to display and manage student attendance
-    const StudentAttendanceSection = () => {
-        const renderTableSection = () => {
-            return (
-                <>
-                    <h3>Attendance:</h3>
-                    <Table>
-                        <TableHead>
-                            <StyledTableRow>
-                                <StyledTableCell>Subject</StyledTableCell>
-                                <StyledTableCell>Present</StyledTableCell>
-                                <StyledTableCell>Total Sessions</StyledTableCell>
-                                <StyledTableCell>Attendance Percentage</StyledTableCell>
-                                <StyledTableCell align="center">Actions</StyledTableCell>
-                            </StyledTableRow>
-                        </TableHead>
-                        {/* Map through each subject's attendance */}
-                        {Object.entries(groupAttendanceBySubject(subjectAttendance)).map(([subName, { present, allData, subId, sessions }], index) => {
-                            const subjectAttendancePercentage = calculateSubjectAttendancePercentage(present, sessions);
-                            return (
-                                <TableBody key={index}>
-                                    <StyledTableRow>
-                                        <StyledTableCell>{subName}</StyledTableCell>
-                                        <StyledTableCell>{present}</StyledTableCell>
-                                        <StyledTableCell>{sessions}</StyledTableCell>
-                                        <StyledTableCell>{subjectAttendancePercentage}%</StyledTableCell>
-                                        <StyledTableCell align="center">
-                                            <Button variant="contained"
-                                                onClick={() => handleOpen(subId)}>
-                                                {openStates[subId] ? <KeyboardArrowUp /> : <KeyboardArrowDown />}Details
-                                                {/* Button to toggle subject details */}
-                                            </Button>
-                                            <IconButton onClick={() => removeSubAttendance(subId)}>
-                                                <DeleteIcon color="error" />
-                                            </IconButton>
-                                            <Button variant="contained" sx={styles.attendanceButton}
-                                                onClick={() => navigate(`/Admin/subject/student/attendance/${studentID}/${subId}`)}>
-                                                Change
-                                            </Button>
-                                        </StyledTableCell>
-                                    </StyledTableRow>
-                                    <StyledTableRow>
-                                        {/* Collapsible section for detailed attendance */}
-                                        <StyledTableCell style={{ paddingBottom: 0, paddingTop: 0 }} colSpan={6}>
-                                            <Collapse in={openStates[subId]} timeout="auto" unmountOnExit>
-                                                <Box sx={{ margin: 1 }}>
-                                                    <Typography variant="h6" gutterBottom component="div">
-                                                        Attendance Details
-                                                    </Typography>
-                                                    <Table size="small" aria-label="purchases">
-                                                        <TableHead>
-                                                            <StyledTableRow>
-                                                                <StyledTableCell>Date</StyledTableCell>
-                                                                <StyledTableCell align="right">Status</StyledTableCell>
-                                                            </StyledTableRow>
-                                                        </TableHead>
-                                                        <TableBody>
-                                                            {allData.map((data, index) => {
-                                                                const date = new Date(data.date);
-                                                                const dateString = date.toString() !== "Invalid Date" ? date.toISOString().substring(0, 10) : "Invalid Date";
-                                                                return (
-                                                                    <StyledTableRow key={index}>
-                                                                        <StyledTableCell component="th" scope="row">
-                                                                            {dateString}
-                                                                        </StyledTableCell>
-                                                                        <StyledTableCell align="right">{data.status}</StyledTableCell>
-                                                                    </StyledTableRow>
-                                                                )
-                                                            })}
-                                                        </TableBody>
-                                                    </Table>
-                                                </Box>
-                                            </Collapse>
-                                        </StyledTableCell>
-                                    </StyledTableRow>
-                                </TableBody>
-                            )
-                        }
-                        )}
-                    </Table>
-                    <div>
-                        Overall Attendance Percentage: {overallAttendancePercentage.toFixed(2)}%
-                    </div>
-                    {/* Buttons for deleting all attendance or adding new attendance */}
-                    <Button variant="contained" color="error" startIcon={<DeleteIcon />} onClick={() => removeHandler(studentID, "RemoveStudentAtten")}>Delete All</Button>
-                    <Button variant="contained" sx={styles.styledButton} onClick={() => navigate("/Admin/students/student/attendance/" + studentID)}>
-                        Add Attendance
-                    </Button>
-                </>
-                // Render the chart section
-            )
-        }
-        const renderChartSection = () => {
-            return (
-                <>
-                    <CustomBarChart chartData={subjectData} dataKey="attendancePercentage" />
-                </>
-            )
-        }
-        return (
-            <>
-                {/* Conditional rendering based on whether there is attendance data */}
-                {subjectAttendance && Array.isArray(subjectAttendance) && subjectAttendance.length > 0
-                    ?
-                    <>
-                        {selectedSection === 'table' && renderTableSection()}
-                        {selectedSection === 'chart' && renderChartSection()}
+  const subjectAttendance = userDetails?.attendance || [];
+  const examResult = userDetails?.examResult || [];
 
-                        <Paper sx={{ position: 'fixed', bottom: 0, left: 0, right: 0 }} elevation={3}>
-                            <BottomNavigation value={selectedSection} onChange={handleSectionChange} showLabels>
-                                <BottomNavigationAction
-                                    label="Table"
-                                    value="table"
-                                    icon={selectedSection === 'table' ? <TableChartIcon /> : <TableChartOutlinedIcon />}
-                                />
-                                <BottomNavigationAction
-                                    label="Chart"
-                                    value="chart"
-                                    icon={selectedSection === 'chart' ? <InsertChartIcon /> : <InsertChartOutlinedIcon />}
-                                />
-                            </BottomNavigation>
-                        </Paper>
-                    </>
-                    :
-                    <Button variant="contained" sx={styles.styledButton} onClick={() => navigate("/Admin/students/student/attendance/" + studentID)}>
-                        Add Attendance
-                    </Button>
-                }
-            </>
-        )
-    }
+  const overallAttendancePercentage = calculateOverallAttendancePercentage(subjectAttendance);
+  const overallAbsentPercentage = 100 - overallAttendancePercentage;
 
-    // Component to display and manage student marks
-    const StudentMarksSection = () => {
-        const renderTableSection = () => {
-            return (
-                <>
-                    <h3>Subject Marks:</h3>
-                    <Table>
-                        <TableHead>
-                            <StyledTableRow>
-                                <StyledTableCell>Subject</StyledTableCell>
-                                <StyledTableCell>Marks</StyledTableCell>
-                            </StyledTableRow>
-                        </TableHead>
-                        {/* Map through each subject's marks */}
-                        <TableBody>
-                            {subjectMarks.map((result, index) => {
-                                if (!result.subName || !result.marksObtained) {
-                                    return null;
-                                }
-                                return (
-                                    <StyledTableRow key={index}>
-                                        <StyledTableCell>{result.subName.subName}</StyledTableCell>
-                                        <StyledTableCell>{result.marksObtained}</StyledTableCell>
-                                    </StyledTableRow>
-                                );
-                            })}
-                        </TableBody>
-                    </Table>
-                    {/* Button to add new marks */}
-                    <Button variant="contained" sx={styles.styledButton} onClick={() => navigate("/Admin/students/student/marks/" + studentID)}>
-                        Add Marks
-                    </Button>
-                </>
-            )
-        }
-        const renderChartSection = () => {
-            return (
-                <>
-                    <CustomBarChart chartData={subjectMarks} dataKey="marksObtained" />
-                </>
-            )
-        }
-        return (
-            <>
-                {subjectMarks && Array.isArray(subjectMarks) && subjectMarks.length > 0
-                    ?
-                    <>
-                        {selectedSection === 'table' && renderTableSection()}
-                        {selectedSection === 'chart' && renderChartSection()}
+  const chartData = [
+    { name: "Attended Sessions", value: overallAttendancePercentage },
+    { name: "Unattended Sessions", value: overallAbsentPercentage },
+  ];
 
-                        <Paper sx={{ position: 'fixed', bottom: 0, left: 0, right: 0 }} elevation={3}>
-                            <BottomNavigation value={selectedSection} onChange={handleSectionChange} showLabels>
-                                <BottomNavigationAction
-                                    label="Table"
-                                    value="table"
-                                    icon={selectedSection === 'table' ? <TableChartIcon /> : <TableChartOutlinedIcon />}
-                                />
-                                <BottomNavigationAction
-                                    label="Chart"
-                                    value="chart"
-                                    icon={selectedSection === 'chart' ? <InsertChartIcon /> : <InsertChartOutlinedIcon />}
-                                />
-                            </BottomNavigation>
-                        </Paper>
-                    </>
-                    :
-                    <Button variant="contained" sx={styles.styledButton} onClick={() => navigate("/Admin/students/student/marks/" + studentID)}>
-                        Add Marks
-                    </Button>
-                }
-            </>
-        )
-    }
+  // Attendance Breakdown Table
+  const attendanceColumns = [
+    { id: "subName", label: "Discipline", minWidth: 160 },
+    { id: "present", label: "Attended", minWidth: 100 },
+    { id: "sessions", label: "Total Sessions", minWidth: 100 },
+    { id: "percentage", label: "Attendance Metric", minWidth: 120 },
+  ];
 
-    // Component to display student details
-    const StudentDetailsSection = () => {
-        return (
-            <Paper elevation={3} sx={{ padding: '20px', backgroundColor: '#fff', marginTop: '20px' }}>
-                <div>
-                    Name: {userDetails.name}
-                    <br />
-                    Roll Number: {userDetails.rollNum}
-                    <br />
-                    Class: {sclassName.sclassName}
-                    <br />
-                    School: {studentSchool.schoolName}
-                    {
-                        subjectAttendance && Array.isArray(subjectAttendance) && subjectAttendance.length > 0 && (
-                            <CustomPieChart data={chartData} />
-                        )
-                    }
-                    {/* Button to delete the student */}
-                    <Button variant="contained" sx={styles.styledButton} onClick={deleteHandler}>
-                        Delete
-                    </Button>
-                    <br />
-                </div>
-            </Paper>
-        )
-    }
+  const groupedAttendance = groupAttendanceBySubject(subjectAttendance);
+  const attendanceRows = Object.entries(groupedAttendance).map(([subName, data], idx) => {
+    const pct = Math.round((data.present / (data.sessions || 1)) * 100);
+    return {
+      id: idx,
+      subName,
+      present: `${data.present} Days`,
+      sessions: `${data.sessions || 30} Total`,
+      percentage: `${pct}% Rate`,
+    };
+  });
 
-    // Main return statement for the component
-    return (
+  // Examination Marks Table
+  const markColumns = [
+    { id: "subject", label: "Discipline", minWidth: 160 },
+    { id: "marks", label: "Score Obtained", minWidth: 120 },
+    { id: "grade", label: "Academic Standing", minWidth: 120 },
+  ];
+
+  const markRows = Array.isArray(examResult)
+    ? examResult.map((res, idx) => {
+        const score = Number(res.marksObtained);
+        let grade = "Pass";
+        if (score >= 90) grade = "High Distinction (A+)";
+        else if (score >= 80) grade = "Distinction (A)";
+        else if (score >= 70) grade = "Commendable (B)";
+        else if (score >= 60) grade = "Satisfactory (C)";
+        else if (score < 50) grade = "Remedial (F)";
+
+        return {
+          id: idx,
+          subject: res.subName?.subName || "Discipline Assessment",
+          marks: `${res.marksObtained}/100`,
+          grade,
+        };
+      })
+    : [];
+
+  return (
+    <Container maxWidth="xl" sx={{ py: 4, mb: 6 }}>
+      {/* Top Navigation */}
+      <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 3, flexWrap: "wrap", gap: 2 }}>
+        <BackBtn onClick={() => navigate(-1)}>
+          <ArrowBack sx={{ fontSize: 18, mr: 0.5 }} /> Back to Scholar Roster
+        </BackBtn>
+
+        <Box sx={{ display: "flex", gap: 1.5 }}>
+          <GreenButton
+            variant="contained"
+            onClick={() => navigate(`/Admin/students/student/attendance/${studentID}`)}
+          >
+            + Log Attendance
+          </GreenButton>
+          <BlueButton
+            variant="contained"
+            onClick={() => navigate(`/Admin/students/student/marks/${studentID}`)}
+          >
+            + Grade Marks
+          </BlueButton>
+          <Tooltip title="Revoke Scholar Credentials">
+            <IconButton
+              onClick={deleteHandler}
+              sx={{
+                color: "#EF4444",
+                background: "rgba(239, 68, 68, 0.1)",
+                "&:hover": { background: "rgba(239, 68, 68, 0.2)" },
+              }}
+            >
+              <DeleteIcon sx={{ fontSize: 20 }} />
+            </IconButton>
+          </Tooltip>
+        </Box>
+      </Box>
+
+      {/* Header Dossier */}
+      {loading ? (
+        <TableSkeleton rows={4} columns={3} />
+      ) : (
         <>
-            {loading
-                ?
-                <>
-                    <div>Loading...</div>
-                </>
-                :
-                <>
-                    <Box sx={{ width: '100%', typography: 'body1', }} >
-                        <TabContext value={value}>
-                            {/* Tab navigation */}
-                            <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
-                                <TabList onChange={handleChange} sx={{ position: 'fixed', width: '100%', bgcolor: 'background.paper', zIndex: 1 }}>
-                                    <Tab label="Details" value="1" />
-                                    <Tab label="Attendance" value="2" />
-                                    <Tab label="Marks" value="3" />
-                                </TabList>
-                            </Box>
-                            <Container sx={{ marginTop: "3rem", marginBottom: "4rem" }}>
-                                <TabPanel value="1">
-                                    <StudentDetailsSection />
-                                </TabPanel>
-                                <TabPanel value="2">
-                                    <StudentAttendanceSection />
-                                </TabPanel>
-                                <TabPanel value="3">
-                                    <StudentMarksSection />
-                                </TabPanel>
-                            </Container>
-                        </TabContext>
-                    </Box>
-                </>
-            }
-            <Popup message={message} setShowPopup={setShowPopup} showPopup={showPopup} />
+          <HeaderCard>
+            <Box sx={{ display: "flex", alignItems: "center", gap: 3, flexWrap: "wrap" }}>
+              <Avatar
+                sx={{
+                  width: 80,
+                  height: 80,
+                  bgcolor: "rgba(0, 119, 212, 0.25)",
+                  color: "#00A3FF",
+                  fontWeight: 800,
+                  fontSize: "1.8rem",
+                  border: "2px solid #00A3FF50",
+                }}
+              >
+                {userDetails?.name ? String(userDetails.name).charAt(0).toUpperCase() : "S"}
+              </Avatar>
 
+              <Box sx={{ flexGrow: 1 }}>
+                <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 0.5 }}>
+                  <span className="lumina-badge cyan">
+                    <CheckCircle sx={{ fontSize: 13 }} /> Enrolled Scholar
+                  </span>
+                  <span className="lumina-badge">Roll #{userDetails?.rollNum || "N/A"}</span>
+                </Box>
+                <Typography variant="h4" sx={{ fontWeight: 800, color: "#F8FAFC", letterSpacing: "-0.01em" }}>
+                  {userDetails?.name || "Global Scholar"}
+                </Typography>
+                <Typography variant="body2" sx={{ color: "#94A3B8" }}>
+                  Cohort: {userDetails?.sclassName?.sclassName || "Standard Standard"} • {userDetails?.school?.schoolName || "Accredited Knowledge Hub"}
+                </Typography>
+              </Box>
+
+              {/* Attendance Donut Quick Insight */}
+              {subjectAttendance.length > 0 && (
+                <Box sx={{ width: 140, height: 100, display: "flex", justifyContent: "center" }}>
+                  <CustomPieChart data={chartData} />
+                </Box>
+              )}
+            </Box>
+
+            {/* Details Strip */}
+            <Grid container spacing={2} sx={{ mt: 2 }}>
+              <Grid item xs={6} sm={3}>
+                <MetricTile>
+                  <Badge sx={{ fontSize: 20, color: "#00A3FF" }} />
+                  <Box>
+                    <Typography variant="caption" sx={{ color: "#94A3B8", fontWeight: 700 }}>
+                      Matriculation Roll
+                    </Typography>
+                    <Typography variant="body2" sx={{ color: "#F8FAFC", fontWeight: 800 }}>
+                      {userDetails?.rollNum || "Unassigned"}
+                    </Typography>
+                  </Box>
+                </MetricTile>
+              </Grid>
+
+              <Grid item xs={6} sm={3}>
+                <MetricTile>
+                  <School sx={{ fontSize: 20, color: "#00C49F" }} />
+                  <Box>
+                    <Typography variant="caption" sx={{ color: "#94A3B8", fontWeight: 700 }}>
+                      Academic Standard
+                    </Typography>
+                    <Typography variant="body2" sx={{ color: "#F8FAFC", fontWeight: 800 }}>
+                      {userDetails?.sclassName?.sclassName || "Unassigned Cohort"}
+                    </Typography>
+                  </Box>
+                </MetricTile>
+              </Grid>
+
+              <Grid item xs={6} sm={3}>
+                <MetricTile>
+                  <AssignmentTurnedIn sx={{ fontSize: 20, color: "#A855F7" }} />
+                  <Box>
+                    <Typography variant="caption" sx={{ color: "#94A3B8", fontWeight: 700 }}>
+                      Overall Attendance
+                    </Typography>
+                    <Typography variant="body2" sx={{ color: "#00C49F", fontWeight: 800 }}>
+                      {overallAttendancePercentage}% Rate
+                    </Typography>
+                  </Box>
+                </MetricTile>
+              </Grid>
+
+              <Grid item xs={6} sm={3}>
+                <MetricTile>
+                  <AccountBalance sx={{ fontSize: 20, color: "#F59E0B" }} />
+                  <Box>
+                    <Typography variant="caption" sx={{ color: "#94A3B8", fontWeight: 700 }}>
+                      Accredited Academy
+                    </Typography>
+                    <Typography variant="body2" sx={{ color: "#F8FAFC", fontWeight: 800 }}>
+                      {userDetails?.school?.schoolName || "INTERNATIONAL KNOWLEDGE CAMPUS"}
+                    </Typography>
+                  </Box>
+                </MetricTile>
+              </Grid>
+            </Grid>
+          </HeaderCard>
+
+          {/* Navigation Tabs */}
+          <GlassTabsContainer>
+            <Tabs
+              value={tabValue}
+              onChange={(e, val) => setTabValue(val)}
+              textColor="inherit"
+              sx={{
+                "& .MuiTabs-indicator": { backgroundColor: "#00A3FF", height: 3 },
+                "& .MuiTab-root": {
+                  color: "#94A3B8",
+                  fontWeight: 700,
+                  textTransform: "none",
+                  fontSize: "0.95rem",
+                  "&.Mui-selected": { color: "#00A3FF" },
+                },
+              }}
+            >
+              <Tab icon={<BarChart sx={{ fontSize: 18 }} />} iconPosition="start" label="Attendance Analytics" />
+              <Tab icon={<Grade sx={{ fontSize: 18 }} />} iconPosition="start" label={`Academic Scores (${markRows.length})`} />
+            </Tabs>
+          </GlassTabsContainer>
+
+          {/* Tab Content */}
+          {tabValue === 0 && (
+            <Box sx={{ mt: 3 }}>
+              {attendanceRows.length === 0 ? (
+                <EmptyGlassState>
+                  <AssignmentTurnedIn sx={{ fontSize: 44, color: "#00A3FF", mb: 1.5 }} />
+                  <Typography variant="h6" sx={{ color: "#F8FAFC", fontWeight: 700 }}>
+                    No Attendance Records Registered
+                  </Typography>
+                  <Typography variant="body2" sx={{ color: "#94A3B8", mt: 0.5, mb: 2 }}>
+                    Log daily presence for this scholar across their allocated subject disciplines.
+                  </Typography>
+                  <GreenButton
+                    variant="contained"
+                    onClick={() => navigate(`/Admin/students/student/attendance/${studentID}`)}
+                  >
+                    + Record First Attendance
+                  </GreenButton>
+                </EmptyGlassState>
+              ) : (
+                <TableTemplate
+                  buttonHaver={() => null}
+                  columns={attendanceColumns}
+                  rows={attendanceRows}
+                />
+              )}
+            </Box>
+          )}
+
+          {tabValue === 1 && (
+            <Box sx={{ mt: 3 }}>
+              {markRows.length === 0 ? (
+                <EmptyGlassState>
+                  <Grade sx={{ fontSize: 44, color: "#F59E0B", mb: 1.5 }} />
+                  <Typography variant="h6" sx={{ color: "#F8FAFC", fontWeight: 700 }}>
+                    No Exam Evaluations Recorded
+                  </Typography>
+                  <Typography variant="body2" sx={{ color: "#94A3B8", mt: 0.5, mb: 2 }}>
+                    Grade exam results and academic milestone evaluations for this student.
+                  </Typography>
+                  <BlueButton
+                    variant="contained"
+                    onClick={() => navigate(`/Admin/students/student/marks/${studentID}`)}
+                  >
+                    + Grade Exam Evaluation
+                  </BlueButton>
+                </EmptyGlassState>
+              ) : (
+                <TableTemplate
+                  buttonHaver={() => null}
+                  columns={markColumns}
+                  rows={markRows}
+                />
+              )}
+            </Box>
+          )}
         </>
-    )
-}
+      )}
 
-export default ViewStudent
+      <Popup message={message} setShowPopup={setShowPopup} showPopup={showPopup} />
+    </Container>
+  );
+};
 
-// Styles for buttons
-const styles = {
-    attendanceButton: {
-        marginLeft: "20px",
-        backgroundColor: "#270843",
-        "&:hover": {
-            backgroundColor: "#3f1068",
-        }
-    },
-    styledButton: {
-        margin: "20px",
-        backgroundColor: "#02250b",
-        "&:hover": {
-            backgroundColor: "#106312",
-        }
-    }
-}
+export default ViewStudent;
+
+const HeaderCard = styled(Box)`
+  background: rgba(13, 22, 41, 0.75);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 20px;
+  padding: 28px;
+  margin-bottom: 24px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+`;
+
+const MetricTile = styled(Box)`
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 12px;
+  padding: 12px 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+`;
+
+const GlassTabsContainer = styled(Box)`
+  background: rgba(13, 22, 41, 0.6);
+  backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 14px;
+  padding: 4px 12px;
+`;
+
+const EmptyGlassState = styled(Box)`
+  background: rgba(13, 22, 41, 0.6);
+  backdrop-filter: blur(16px);
+  border: 1px dashed rgba(255, 255, 255, 0.12);
+  border-radius: 18px;
+  padding: 48px 24px;
+  text-align: center;
+`;
+
+const BackBtn = styled.button`
+  background: transparent;
+  border: none;
+  color: #94a3b8;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  font-weight: 600;
+  font-size: 0.9rem;
+  transition: all 0.2s;
+  &:hover {
+    color: #f8fafc;
+  }
+`;

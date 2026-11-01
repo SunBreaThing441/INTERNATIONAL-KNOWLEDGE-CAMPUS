@@ -1,77 +1,71 @@
-import React, { useEffect } from 'react'
-import { useDispatch, useSelector } from 'react-redux';
-import { getAllNotices } from '../redux/noticeRelated/noticeHandle';
-import { Paper } from '@mui/material';
-import TableViewTemplate from './TableViewTemplate';
+import React, { useEffect } from "react";
+import { useDispatch, useSelector } from "react-redux";
+import { getAllNotices } from "../redux/noticeRelated/noticeHandle";
+import { Box, Typography, CircularProgress } from "@mui/material";
+import TableViewTemplate from "./TableViewTemplate";
 
 const SeeNotice = () => {
-    // Initialize dispatch function from react-redux
-    const dispatch = useDispatch();
+  const dispatch = useDispatch();
 
-    // Access current user and role from the Redux store
-    const { currentUser, currentRole } = useSelector(state => state.user);
-    // Access notices data from the Redux store
-    const { noticesList, loading, error, response } = useSelector((state) => state.notice);
+  const { currentUser, currentRole } = useSelector((state) => state.user);
+  const { noticesList, loading, response } = useSelector((state) => state.notice);
 
-    // Fetch notices when the component mounts or when dependencies change
-    useEffect(() => {
-        // Check if the current user is an Admin
-        if (currentRole === "Admin") {
-            // Dispatch action to get all notices for the Admin
-            dispatch(getAllNotices(currentUser._id, "Notice"));
-        }
-        else {
-            // Dispatch action to get all notices for the school
-            dispatch(getAllNotices(currentUser.school._id, "Notice"));
-        }
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [dispatch]);
-    // Log error if any
-    if (error) {
-        console.log(error); // Log the error to the console
+  useEffect(() => {
+    const schoolId =
+      currentRole === "Admin"
+        ? currentUser?._id
+        : currentUser?.school?._id || currentUser?.school;
+
+    if (schoolId) {
+      dispatch(getAllNotices(schoolId, "Notice"));
     }
+  }, [dispatch, currentRole, currentUser]);
 
-    const noticeColumns = [
-        { id: 'title', label: 'Title', minWidth: 170 },
-        { id: 'details', label: 'Details', minWidth: 100 },
-        { id: 'date', label: 'Date', minWidth: 170 },
-    ];
-    // Map the noticesList to the format required by the TableViewTemplate
-    const noticeRows = noticesList.map((notice) => {
-        // Create a new Date object from the notice date
+  const noticeColumns = [
+    { id: "title", label: "Gazette Title", minWidth: 200 },
+    { id: "details", label: "Brief / Directive", minWidth: 300 },
+    { id: "date", label: "Broadcast Date", minWidth: 140 },
+  ];
+
+  const noticeRows = Array.isArray(noticesList)
+    ? noticesList.map((notice) => {
         const date = new Date(notice.date);
-        // Format the date to YYYY-MM-DD or "Invalid Date" if the date is invalid
-        const dateString = date.toString() !== "Invalid Date" ? date.toISOString().substring(0, 10) : "Invalid Date";
+        const dateString =
+          date.toString() !== "Invalid Date"
+            ? date.toISOString().substring(0, 10)
+            : "Recent";
         return {
-            // Extract the title from the notice
-            title: notice.title,
-            details: notice.details,
-            date: dateString,
-            id: notice._id,
+          title: notice.title,
+          details: notice.details,
+          date: dateString,
+          id: notice._id,
         };
-    });
-    return (
-        <div style={{ marginTop: '50px', marginRight: '20px' }}>
-            {/* Show loading message while data is being fetched */}
-            {loading ? (
-                <div style={{ fontSize: '20px' }}>Loading...</div>
-            // Show message if there are no notices
-            ) : response ? (
-                <div style={{ fontSize: '20px' }}>No Notices to Show Right Now</div>
-            ) : (
-                <>
-                    <h3 style={{ fontSize: '30px', marginBottom: '40px' }}>Notices</h3>
-                    <Paper sx={{ width: '100%', overflow: 'hidden' }}>
-                        {Array.isArray(noticesList) && noticesList.length > 0 &&
-                            // Render the TableViewTemplate with the notice data
-                            <TableViewTemplate columns={noticeColumns} rows={noticeRows} />
-                        }
-                    </Paper>
-                </>
-            )}
-        </div>
+      })
+    : [];
 
-    )
-}
+  return (
+    <Box sx={{ width: "100%" }}>
+      {loading ? (
+        <Box sx={{ textAlign: "center", py: 4 }}>
+          <CircularProgress size={28} sx={{ color: "#00A3FF" }} />
+          <Typography variant="body2" sx={{ color: "#94A3B8", mt: 1 }}>
+            Retrieving Global Gazettes...
+          </Typography>
+        </Box>
+      ) : response || noticeRows.length === 0 ? (
+        <Box sx={{ textAlign: "center", py: 4, color: "#94A3B8" }}>
+          <Typography variant="body1" sx={{ fontWeight: 600 }}>
+            No Active Gazettes or Circulars Broadcasted
+          </Typography>
+          <Typography variant="caption">
+            Official announcements published by administration will appear here.
+          </Typography>
+        </Box>
+      ) : (
+        <TableViewTemplate columns={noticeColumns} rows={noticeRows} />
+      )}
+    </Box>
+  );
+};
 
-export default SeeNotice
+export default SeeNotice;

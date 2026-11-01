@@ -23,8 +23,8 @@ import AccountMenu from "../../components/AccountMenu";
 import { AppBar, Drawer } from "../../components/styles";
 
 const StudentDashboard = () => {
-  // State to manage the drawer's open/close state
-  const [open, setOpen] = useState(false);
+  // State to manage the drawer's open/close state (open by default on desktop)
+  const [open, setOpen] = useState(window.innerWidth >= 960);
   // Function to toggle the drawer's open/close state
   const toggleDrawer = () => {
     setOpen(!open);
@@ -33,13 +33,9 @@ const StudentDashboard = () => {
   return (
     // Main container for the student dashboard
     <>
-      <Box sx={{ display: "flex" }}>
+      <Box sx={{ display: "flex", height: "100vh", overflow: "hidden" }}>
         <CssBaseline />
-        <AppBar
-          open={open}
-          position="absolute"
-          sx={{ backgroundColor: "darkblue" }}
-        >
+        <AppBar open={open} position="absolute">
           {/* Toolbar for the app bar */}
           <Toolbar sx={{ pr: "24px" }}>
             <IconButton
@@ -48,23 +44,26 @@ const StudentDashboard = () => {
               aria-label="open drawer"
               onClick={toggleDrawer}
               sx={{
-                marginRight: "36px",
+                marginRight: "28px",
                 ...(open && { display: "none" }),
               }}
             >
-              <MenuIcon />
+              <MenuIcon sx={{ color: "#A855F7" }} />
             </IconButton>
-            {/* Title of the dashboard */}
-            <Typography
-              component="h1"
-              variant="h6"
-              color="inherit"
-              noWrap
-              sx={{ flexGrow: 1 }}
-            >
-              Student Dashboard
-            </Typography>
-            {/* Account menu component */}
+            <Box sx={{ flexGrow: 1, display: "flex", alignItems: "center", gap: 1.5, minWidth: 0 }}>
+              <Typography
+                component="h1"
+                variant="h6"
+                color="inherit"
+                noWrap
+                sx={{ fontWeight: 800, letterSpacing: "-0.01em", flexShrink: 0 }}
+              >
+                LUMINA <span style={{ color: "#A855F7" }}>GLOBAL SCHOLAR</span>
+              </Typography>
+              <span className="lumina-badge" style={{ whiteSpace: "nowrap", flexShrink: 0 }}>
+                Open Learner Workspace
+              </span>
+            </Box>
             <AccountMenu />
           </Toolbar>
         </AppBar>
@@ -82,7 +81,7 @@ const StudentDashboard = () => {
           <Divider />
           <List component="nav">
             {/* Sidebar component */}
-            <StudentSideBar />
+            <StudentSideBar open={open} />
           </List>
         </Drawer>
         <Box component="main" sx={styles.boxStyled}>
@@ -90,16 +89,16 @@ const StudentDashboard = () => {
           <Toolbar />
           <Routes>
             <Route path="/" element={<StudentHomePage />} />
-            <Route path="*" element={<Navigate to="/" />} />
-            <Route path="/Student/dashboard" element={<StudentHomePage />} />
-            <Route path="/Student/profile" element={<StudentProfile />} />
-            <Route path="/Student/form" element={<StudentForm />} />
+            <Route path="dashboard" element={<StudentHomePage />} />
+            <Route path="profile" element={<StudentProfile />} />
+            <Route path="form" element={<StudentForm />} />
 
-            <Route path="/Student/subjects" element={<StudentSubjects />} />
-            <Route path="/Student/attendance" element={<ViewStdAttendance />} />
-            <Route path="/Student/complain" element={<StudentComplain />} />
+            <Route path="subjects" element={<StudentSubjects />} />
+            <Route path="attendance" element={<ViewStdAttendance />} />
+            <Route path="complain" element={<StudentComplain />} />
 
-            <Route path="/logout" element={<Logout />} />
+            <Route path="logout" element={<Logout />} />
+            <Route path="*" element={<Navigate to="dashboard" replace />} />
           </Routes>
         </Box>
       </Box>
@@ -112,10 +111,8 @@ export default StudentDashboard;
 const styles = {
   // Styles for the main content area
   boxStyled: {
-    backgroundColor: (theme) =>
-      theme.palette.mode === "light"
-        ? theme.palette.grey[100]
-        : theme.palette.grey[900],
+    backgroundColor: "transparent",
+    color: "#F8FAFC",
     flexGrow: 1,
     height: "100vh",
     overflow: "auto",

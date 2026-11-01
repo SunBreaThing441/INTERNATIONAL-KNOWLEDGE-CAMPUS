@@ -14,13 +14,21 @@ const app = express();
 app.use(express.json({ limit: "10mb" }));
 
 // --- CORS Configuration ---
-// Only allow your frontend’s Vercel domain
-const allowedOrigin = "https://school-management-system-hazel-eta.vercel.app";
+// Allow frontend’s Vercel domain and local development origins
+const allowedOrigins = [
+  "https://school-management-system-hazel-eta.vercel.app",
+  "http://localhost:3000",
+  "http://127.0.0.1:3000",
+];
 
 const corsOptions = {
   origin: function (origin, callback) {
-    // Allow requests with no origin (mobile apps, curl) or from the specific allowed origin
-    if (!origin || origin === allowedOrigin) {
+    // Allow requests with no origin (mobile apps, curl) or from allowed origins / localhost
+    if (
+      !origin ||
+      allowedOrigins.includes(origin) ||
+      /^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin)
+    ) {
       callback(null, true);
     } else {
       console.warn(`Blocked CORS for origin: ${origin}`);

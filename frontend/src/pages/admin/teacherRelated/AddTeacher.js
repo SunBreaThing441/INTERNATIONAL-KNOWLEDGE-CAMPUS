@@ -1,128 +1,244 @@
-// Import necessary modules and components
-import React, { useEffect, useState } from 'react'
-import { useDispatch, useSelector } from 'react-redux';
-import { useNavigate, useParams } from 'react-router-dom';
-import { getSubjectDetails } from '../../../redux/sclassRelated/sclassHandle';
-import Popup from '../../../components/Popup';
-import { registerUser } from '../../../redux/userRelated/userHandle';
-import { underControl } from '../../../redux/userRelated/userSlice';
-import { CircularProgress } from '@mui/material';
+import React, { useEffect, useState } from "react";
+import { useDispatch, useSelector } from "react-redux";
+import { useNavigate, useParams } from "react-router-dom";
+import { getSubjectDetails } from "../../../redux/sclassRelated/sclassHandle";
+import Popup from "../../../components/Popup";
+import { registerUser } from "../../../redux/userRelated/userHandle";
+import { underControl } from "../../../redux/userRelated/userSlice";
+import {
+  Box,
+  Button,
+  CircularProgress,
+  Container,
+  TextField,
+  Typography,
+} from "@mui/material";
+import styled from "styled-components";
+import { PersonAdd, ArrowBack, School, MenuBook } from "@mui/icons-material";
+import { BlueButton } from "../../../components/buttonStyles";
 
-// Define the AddTeacher component
 const AddTeacher = () => {
-  // Get parameters from the URL
-  const params = useParams()
-  // Initialize dispatch and navigate
-  const dispatch = useDispatch()
-  const navigate = useNavigate()
+  const params = useParams();
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
 
-  // Get the subject ID from the URL
-  const subjectID = params.id
+  const subjectID = params.id;
 
-  // Get data from Redux store
-  const { status, response, error } = useSelector(state => state.user);
+  const { status, response, error } = useSelector((state) => state.user);
   const { subjectDetails } = useSelector((state) => state.sclass);
 
-  // Fetch subject details when the component mounts
   useEffect(() => {
-    dispatch(getSubjectDetails(subjectID, "Subject"));
+    if (subjectID) {
+      dispatch(getSubjectDetails(subjectID, "Subject"));
+    }
   }, [dispatch, subjectID]);
 
-  // State variables for form fields
-  const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('')
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
 
-  // State variables for popup and loader
   const [showPopup, setShowPopup] = useState(false);
   const [message, setMessage] = useState("");
-  const [loader, setLoader] = useState(false)
+  const [loader, setLoader] = useState(false);
 
-  // Define the role and get school, teachSubject, and teachSclass from subjectDetails
-  const role = "Teacher"
-  const school = subjectDetails && subjectDetails.school
-  const teachSubject = subjectDetails && subjectDetails._id
-  const teachSclass = subjectDetails && subjectDetails.sclassName && subjectDetails.sclassName._id
+  const role = "Teacher";
+  const school = subjectDetails?.school;
+  const teachSubject = subjectDetails?._id;
+  const teachSclass = subjectDetails?.sclassName?._id;
 
-  // Define the fields to be submitted
-  const fields = { name, email, password, role, school, teachSubject, teachSclass }
+  const fields = { name, email, password, role, school, teachSubject, teachSclass };
 
-  // Handle form submission
   const submitHandler = (event) => {
-    event.preventDefault()
-    setLoader(true)
-    // Dispatch action to register a new user
-    dispatch(registerUser(fields, role))
-  }
+    event.preventDefault();
+    if (!name.trim() || !email.trim() || !password.trim()) {
+      setMessage("Please fill in all required credentials.");
+      setShowPopup(true);
+      return;
+    }
+    setLoader(true);
+    dispatch(registerUser(fields, role));
+  };
 
-  // Handle different statuses after submitting the form
   useEffect(() => {
-    if (status === 'added') {
-      dispatch(underControl())
-      navigate("/Admin/teachers")
-    }
-    else if (status === 'failed') {
-      setMessage(response)
-      setShowPopup(true)
-      setLoader(false)
-    }
-    else if (status === 'error') {
-      setMessage("Network Error")
-      setShowPopup(true)
-      setLoader(false)
+    if (status === "added") {
+      setLoader(false);
+      setMessage("Academic Mentor Onboarded Successfully");
+      setShowPopup(true);
+      setTimeout(() => {
+        dispatch(underControl());
+        navigate("/Admin/teachers");
+      }, 700);
+    } else if (status === "failed") {
+      setMessage(response || "Faculty onboarding encountered an error");
+      setShowPopup(true);
+      setLoader(false);
+    } else if (status === "error") {
+      setMessage(error?.message || "Network Error: Failed to contact root server");
+      setShowPopup(true);
+      setLoader(false);
     }
   }, [status, navigate, error, response, dispatch]);
 
   return (
-    <div> {/* Main container for the component */}
-      <div className="register"> {/* Container for the registration form */}
-        <form className="registerForm" onSubmit={submitHandler}> {/* Registration form */}
-          <span className="registerTitle">Add Teacher</span> {/* Title of the form */}
-          <br /> {/* Line break */}
-          {/* Display subject name */}
-          <label>
-            Subject : {subjectDetails && subjectDetails.subName} 
-          </label>
-          {/* Display class name */}
-          <label>
-            Class : {subjectDetails && subjectDetails.sclassName && subjectDetails.sclassName.sclassName} 
-          </label>
-          {/* Input field for teacher's name */}
-          <label>Name</label> 
-          <input className="registerInput" type="text" placeholder="Enter teacher's name..."
-            value={name} // Bind the value to the state variable
-            onChange={(event) => setName(event.target.value)} // Update the state variable on change
-            autoComplete="name" required /> {/* Input field for teacher's name */}
+    <Container maxWidth="sm" sx={{ py: 6 }}>
+      <GlassFormCard>
+        {/* Header */}
+        <Box sx={{ display: "flex", alignItems: "center", gap: 2, mb: 3 }}>
+          <IconWrapper>
+            <PersonAdd sx={{ fontSize: 28, color: "#00A3FF" }} />
+          </IconWrapper>
+          <Box>
+            <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 0.5 }}>
+              <span className="lumina-badge cyan">Faculty Onboarding</span>
+              <span className="lumina-badge">POST /TeacherReg</span>
+            </Box>
+            <Typography variant="h5" sx={{ fontWeight: 800, color: "#F8FAFC", letterSpacing: "-0.01em" }}>
+              Onboard Academic Mentor
+            </Typography>
+            <Typography variant="body2" sx={{ color: "#94A3B8" }}>
+              Appoint a qualified instructor to lead this subject curriculum.
+            </Typography>
+          </Box>
+        </Box>
 
-          {/* Input field for teacher's email */}
-          <label>Email</label> 
-          <input className="registerInput" type="email" placeholder="Enter teacher's email..."
-            value={email} // Bind the value to the state variable
-            onChange={(event) => setEmail(event.target.value)} // Update the state variable on change
-            autoComplete="email" required /> {/* Input field for teacher's email */}
+        {/* Allocation Context Badges */}
+        <Box sx={{ display: "flex", gap: 1.5, flexWrap: "wrap", mb: 3, p: 2, borderRadius: "12px", background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)" }}>
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+            <MenuBook sx={{ fontSize: 18, color: "#00C49F" }} />
+            <Typography variant="body2" sx={{ color: "#F8FAFC", fontWeight: 600 }}>
+              Subject: {subjectDetails?.subName || "Loading subject..."}
+            </Typography>
+          </Box>
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+            <School sx={{ fontSize: 18, color: "#00A3FF" }} />
+            <Typography variant="body2" sx={{ color: "#94A3B8", fontWeight: 600 }}>
+              Cohort: {subjectDetails?.sclassName?.sclassName || "Loading cohort..."}
+            </Typography>
+          </Box>
+        </Box>
 
-          {/* Input field for teacher's password */}
-          <label>Password</label> 
-          <input className="registerInput" type="password" placeholder="Enter teacher's password..."
-            value={password} // Bind the value to the state variable
-            onChange={(event) => setPassword(event.target.value)} // Update the state variable on change
-            autoComplete="new-password" required /> {/* Input field for teacher's password */}
+        <form onSubmit={submitHandler}>
+          <Box sx={{ display: "flex", flexDirection: "column", gap: 2.5 }}>
+            <GlassTextField
+              label="Mentor Full Name"
+              placeholder="e.g. Dr. Jane Smith"
+              variant="outlined"
+              fullWidth
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              required
+              autoFocus
+            />
 
-          {/* Submit button */}
-          <button className="registerButton" type="submit" disabled={loader}> 
-            {/* Conditional rendering for loading indicator */}
-            {loader ? (
-              <CircularProgress size={24} color="inherit" /> // Show loading indicator when loader is true
-            ) : (
-              'Register' // Show 'Register' text when loader is false
-            )}
-          </button>
+            <GlassTextField
+              label="Institutional Email"
+              type="email"
+              placeholder="e.g. jane.smith@lumina.edu"
+              variant="outlined"
+              fullWidth
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+            />
+
+            <GlassTextField
+              label="Initial Access Password"
+              type="password"
+              placeholder="••••••••••••"
+              variant="outlined"
+              fullWidth
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+              inputProps={{ minLength: 6 }}
+            />
+
+            <Box sx={{ display: "flex", gap: 2, mt: 1 }}>
+              <BlueButton
+                fullWidth
+                size="large"
+                variant="contained"
+                type="submit"
+                disabled={loader}
+                sx={{ py: 1.5 }}
+              >
+                {loader ? <CircularProgress size={22} color="inherit" /> : "+ Onboard Mentor"}
+              </BlueButton>
+
+              <CancelButton
+                variant="outlined"
+                onClick={() => navigate(-1)}
+                disabled={loader}
+              >
+                <ArrowBack sx={{ fontSize: 18, mr: 0.5 }} /> Back
+              </CancelButton>
+            </Box>
+          </Box>
         </form>
-      </div>
-      {/* Popup component for displaying messages */}
-      <Popup message={message} setShowPopup={setShowPopup} showPopup={showPopup} />
-    </div>
-  )
-}
+      </GlassFormCard>
 
-export default AddTeacher
+      <Popup message={message} setShowPopup={setShowPopup} showPopup={showPopup} />
+    </Container>
+  );
+};
+
+export default AddTeacher;
+
+const GlassFormCard = styled(Box)`
+  background: rgba(13, 22, 41, 0.8);
+  backdrop-filter: blur(24px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 20px;
+  padding: 36px 32px;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.5);
+`;
+
+const IconWrapper = styled(Box)`
+  width: 54px;
+  height: 54px;
+  border-radius: 14px;
+  background: rgba(0, 163, 255, 0.12);
+  border: 1px solid rgba(0, 163, 255, 0.25);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+`;
+
+const GlassTextField = styled(TextField)`
+  & .MuiOutlinedInput-root {
+    background: rgba(255, 255, 255, 0.04);
+    border-radius: 12px;
+    color: #f8fafc;
+    & fieldset {
+      border-color: rgba(255, 255, 255, 0.12);
+    }
+    &:hover fieldset {
+      border-color: rgba(0, 163, 255, 0.5);
+    }
+    &.Mui-focused fieldset {
+      border-color: #00a3ff;
+      box-shadow: 0 0 12px rgba(0, 163, 255, 0.3);
+    }
+  }
+  & .MuiInputLabel-root {
+    color: #94a3b8;
+    &.Mui-focused {
+      color: #00a3ff;
+    }
+  }
+`;
+
+const CancelButton = styled(Button)`
+  border-color: rgba(255, 255, 255, 0.15) !important;
+  color: #94a3b8 !important;
+  text-transform: none !important;
+  font-weight: 600 !important;
+  border-radius: 12px !important;
+  padding: 10px 20px !important;
+  &:hover {
+    border-color: rgba(255, 255, 255, 0.3) !important;
+    color: #f8fafc !important;
+    background: rgba(255, 255, 255, 0.05) !important;
+  }
+`;

@@ -1,300 +1,321 @@
-// Import necessary modules and components
 import React, { useEffect, useState } from "react";
+import { useNavigate, useParams } from "react-router-dom";
+import { useDispatch, useSelector } from "react-redux";
 import {
   getClassStudents,
   getSubjectDetails,
 } from "../../../redux/sclassRelated/sclassHandle";
-import { useNavigate, useParams } from "react-router-dom";
-import { useDispatch, useSelector } from "react-redux";
 import {
   Box,
-  Tab,
   Container,
   Typography,
-  BottomNavigation,
-  BottomNavigationAction,
-  Paper,
+  Grid,
 } from "@mui/material";
 import {
-  BlueButton,
-  GreenButton,
-  PurpleButton,
-} from "../../../components/buttonStyles";
+  MenuBook,
+  ArrowBack,
+  Person,
+  School,
+  EventNote,
+  InsertChart,
+  TableChart,
+} from "@mui/icons-material";
+import { BlueButton, GreenButton } from "../../../components/buttonStyles";
 import TableTemplate from "../../../components/TableTemplate";
-import TabContext from "@mui/lab/TabContext";
-import TabList from "@mui/lab/TabList";
-import TabPanel from "@mui/lab/TabPanel";
+import { TableSkeleton } from "../../../components/LuminaSkeleton";
+import styled from "styled-components";
 
-import InsertChartIcon from "@mui/icons-material/InsertChart";
-import InsertChartOutlinedIcon from "@mui/icons-material/InsertChartOutlined";
-import TableChartIcon from "@mui/icons-material/TableChart";
-import TableChartOutlinedIcon from "@mui/icons-material/TableChartOutlined";
-
-// Define the ViewSubject component
 const ViewSubject = () => {
   const navigate = useNavigate();
   const params = useParams();
   const dispatch = useDispatch();
-  const { subloading, subjectDetails, sclassStudents, getresponse, error } =
+
+  const { subloading, subjectDetails, sclassStudents, getresponse } =
     useSelector((state) => state.sclass);
 
   const { classID, subjectID } = params;
+  const [selectedSection, setSelectedSection] = useState("attendance"); // 'attendance' | 'marks'
 
-  // Fetch subject details and class students when the component mounts
   useEffect(() => {
-    dispatch(getSubjectDetails(subjectID, "Subject"));
-    dispatch(getClassStudents(classID));
+    if (subjectID && classID) {
+      dispatch(getSubjectDetails(subjectID, "Subject"));
+      dispatch(getClassStudents(classID));
+    }
   }, [dispatch, subjectID, classID]);
-
-  // Log any errors to the console
-  if (error) {
-    console.log(error);
-  }
-
-  // State and handler for tab changes
-  const [value, setValue] = useState("1");
-
-  const handleChange = (event, newValue) => {
-    setValue(newValue);
-  };
-
-  // State and handler for section changes (attendance/marks)
-  const [selectedSection, setSelectedSection] = useState("attendance");
-  const handleSectionChange = (event, newSection) => {
-    setSelectedSection(newSection);
-  };
 
   const studentColumns = [
     { id: "rollNum", label: "Roll No.", minWidth: 100 },
-    { id: "name", label: "Name", minWidth: 170 },
+    { id: "name", label: "Scholar Name", minWidth: 200 },
   ];
 
-  // Map the students data to the table rows format
-  const studentRows = sclassStudents.map((student) => {
-    return {
-      rollNum: student.rollNum,
-      name: student.name,
-      id: student._id,
-    };
-  });
+  const studentRows =
+    Array.isArray(sclassStudents) && sclassStudents.length > 0
+      ? sclassStudents.map((student) => ({
+          rollNum: student.rollNum,
+          name: student.name,
+          id: student._id,
+        }))
+      : [];
 
-  // Define a component for the button in each row of the table for attendance
-  const StudentsAttendanceButtonHaver = ({ row }) => {
-    return (
-      // Render the buttons for each row
-      <>
-        <BlueButton
-          variant="contained"
-          onClick={() => navigate("/Admin/students/student/" + row.id)}
-        >
-          View
-        </BlueButton>
-        <PurpleButton
-          variant="contained"
-          onClick={() =>
-            navigate(`/Admin/subject/student/attendance/${row.id}/${subjectID}`)
-          }
-        >
-          Take Attendance
-        </PurpleButton>
-      </>
-    );
-  };
+  const AttendanceButtonHaver = ({ row }) => (
+    <Box sx={{ display: "flex", gap: 1, justifyContent: "center" }}>
+      <BlueButton
+        size="small"
+        variant="contained"
+        onClick={() => navigate("/Admin/students/student/" + row.id)}
+      >
+        Dossier
+      </BlueButton>
+      <GreenButton
+        size="small"
+        variant="contained"
+        onClick={() =>
+          navigate(`/Admin/subject/student/attendance/${row.id}/${subjectID}`)
+        }
+      >
+        Record Attendance
+      </GreenButton>
+    </Box>
+  );
 
-  // Define a component for the button in each row of the table for marks
-  const StudentsMarksButtonHaver = ({ row }) => {
-    return (
-      // Render the buttons for each row
-      <>
-        <BlueButton
-          variant="contained"
-          onClick={() => navigate("/Admin/students/student/" + row.id)}
-        >
-          View
-        </BlueButton>
-        <PurpleButton
-          variant="contained"
-          onClick={() =>
-            navigate(`/Admin/subject/student/marks/${row.id}/${subjectID}`)
-          }
-        >
-          Provide Marks
-        </PurpleButton>
-      </>
-    );
-  };
+  const MarksButtonHaver = ({ row }) => (
+    <Box sx={{ display: "flex", gap: 1, justifyContent: "center" }}>
+      <BlueButton
+        size="small"
+        variant="contained"
+        onClick={() => navigate("/Admin/students/student/" + row.id)}
+      >
+        Dossier
+      </BlueButton>
+      <BlueButton
+        size="small"
+        variant="contained"
+        onClick={() =>
+          navigate(`/Admin/subject/student/marks/${row.id}/${subjectID}`)
+        }
+      >
+        Grade Evaluation
+      </BlueButton>
+    </Box>
+  );
 
-  // Component to display and manage subject students
-  const SubjectStudentsSection = () => {
-    return (
-      // Conditional rendering based on whether there are students
-      <>
-        {getresponse ? (
-          <>
-            <Box
-              sx={{
-                display: "flex",
-                justifyContent: "flex-end",
-                marginTop: "16px",
-              }}
-            >
-              {/* Button to add new students */}
-              <GreenButton
-                variant="contained"
-                onClick={() => navigate("/Admin/class/addstudents/" + classID)}
-              >
-                Add Students
-              </GreenButton>
+  return (
+    <Container maxWidth="xl" sx={{ py: 4, mb: 6 }}>
+      {/* Top Navigation */}
+      <Box sx={{ mb: 3 }}>
+        <BackBtn onClick={() => navigate(-1)}>
+          <ArrowBack sx={{ fontSize: 18, mr: 0.5 }} /> Back to Curriculum
+        </BackBtn>
+      </Box>
+
+      {/* Header Dossier */}
+      <HeaderCard>
+        <Box sx={{ display: "flex", alignItems: "center", gap: 2.5, flexWrap: "wrap" }}>
+          <IconWrapper>
+            <MenuBook sx={{ fontSize: 32, color: "#00C49F" }} />
+          </IconWrapper>
+          <Box sx={{ flexGrow: 1 }}>
+            <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 0.5 }}>
+              <span className="lumina-badge emerald">Discipline Syllabus</span>
+              <span className="lumina-badge">Code: {subjectDetails?.subCode || "N/A"}</span>
             </Box>
-          </>
-        ) : (
-          // Table to show the students
-          <>
-            <Typography variant="h5" gutterBottom>
-              Students List:
+            <Typography variant="h4" sx={{ fontWeight: 800, color: "#F8FAFC", letterSpacing: "-0.02em" }}>
+              {subjectDetails?.subName || "Curriculum Subject Details"}
             </Typography>
-            {/* Conditional rendering based on selected section */}
-            {selectedSection === "attendance" && (
-              <TableTemplate
-                buttonHaver={StudentsAttendanceButtonHaver}
-                columns={studentColumns}
-                rows={studentRows}
-              />
-            )}
-            {selectedSection === "marks" && (
-              <TableTemplate
-                buttonHaver={StudentsMarksButtonHaver}
-                columns={studentColumns}
-                rows={studentRows}
-              />
-            )}
-            {/* Bottom navigation for switching between attendance and marks */}
-            <Paper
-              sx={{ position: "fixed", bottom: 0, left: 0, right: 0 }}
-              elevation={3}
+            <Typography variant="body2" sx={{ color: "#94A3B8" }}>
+              Allocated Cohort: {subjectDetails?.sclassName?.sclassName || "Unassigned"} • Scheduled Sessions: {subjectDetails?.sessions || 30}
+            </Typography>
+          </Box>
+
+          {!subjectDetails?.teacher && (
+            <GreenButton
+              variant="contained"
+              onClick={() =>
+                navigate(`/Admin/teachers/addteacher/${subjectDetails?._id}`)
+              }
             >
-              <BottomNavigation
-                value={selectedSection}
-                onChange={handleSectionChange}
-                showLabels
-              >
-                <BottomNavigationAction
-                  label="Attendance"
-                  value="attendance"
-                  icon={
-                    selectedSection === "attendance" ? (
-                      <TableChartIcon />
-                    ) : (
-                      <TableChartOutlinedIcon />
-                    )
-                  }
-                />
-                <BottomNavigationAction
-                  label="Marks"
-                  value="marks"
-                  icon={
-                    selectedSection === "marks" ? (
-                      <InsertChartIcon />
-                    ) : (
-                      <InsertChartOutlinedIcon />
-                    )
-                  }
-                />
-              </BottomNavigation>
-            </Paper>
-          </>
-        )}
-      </>
-    );
-  };
+              + Appoint Faculty Mentor
+            </GreenButton>
+          )}
+        </Box>
 
-  // Component to display subject details
-  const SubjectDetailsSection = () => {
-    const numberOfStudents = sclassStudents.length;
+        {/* Details Grid */}
+        <Grid container spacing={2} sx={{ mt: 2 }}>
+          <Grid item xs={12} sm={4}>
+            <DetailTile>
+              <Person sx={{ fontSize: 20, color: "#00A3FF" }} />
+              <Box>
+                <Typography variant="caption" sx={{ color: "#94A3B8", fontWeight: 700 }}>
+                  Appointed Instructor
+                </Typography>
+                <Typography variant="body2" sx={{ color: "#F8FAFC", fontWeight: 700 }}>
+                  {subjectDetails?.teacher?.name || "Unassigned Instructor"}
+                </Typography>
+              </Box>
+            </DetailTile>
+          </Grid>
 
-    return (
-      // Display subject details
-      <>
-        <Typography variant="h4" align="center" gutterBottom>
-          Subject Details
+          <Grid item xs={6} sm={4}>
+            <DetailTile>
+              <School sx={{ fontSize: 20, color: "#00C49F" }} />
+              <Box>
+                <Typography variant="caption" sx={{ color: "#94A3B8", fontWeight: 700 }}>
+                  Enrolled Scholars
+                </Typography>
+                <Typography variant="body2" sx={{ color: "#F8FAFC", fontWeight: 700 }}>
+                  {studentRows.length} Enrollees
+                </Typography>
+              </Box>
+            </DetailTile>
+          </Grid>
+
+          <Grid item xs={6} sm={4}>
+            <DetailTile>
+              <EventNote sx={{ fontSize: 20, color: "#A855F7" }} />
+              <Box>
+                <Typography variant="caption" sx={{ color: "#94A3B8", fontWeight: 700 }}>
+                  Sessions Planned
+                </Typography>
+                <Typography variant="body2" sx={{ color: "#F8FAFC", fontWeight: 700 }}>
+                  {subjectDetails?.sessions || 30} Semester Hours
+                </Typography>
+              </Box>
+            </DetailTile>
+          </Grid>
+        </Grid>
+      </HeaderCard>
+
+      {/* Switcher & Data Table */}
+      <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 3, flexWrap: "wrap", gap: 2 }}>
+        <Typography variant="h5" sx={{ fontWeight: 800, color: "#F8FAFC" }}>
+          Cohort Scholar Roster & Operations
         </Typography>
-        <Typography variant="h6" gutterBottom>
-          Subject Name : {subjectDetails && subjectDetails.subName}
-        </Typography>
-        <Typography variant="h6" gutterBottom>
-          Subject Code : {subjectDetails && subjectDetails.subCode}
-        </Typography>
-        <Typography variant="h6" gutterBottom>
-          Subject Sessions : {subjectDetails && subjectDetails.sessions}
-        </Typography>
-        <Typography variant="h6" gutterBottom>
-          Number of Students: {numberOfStudents}
-        </Typography>
-        <Typography variant="h6" gutterBottom>
-          Class Name :{" "}
-          {subjectDetails &&
-            subjectDetails.sclassName &&
-            subjectDetails.sclassName.sclassName}
-        </Typography>
-        {/* Conditional rendering based on whether there is a teacher */}
-        {subjectDetails && subjectDetails.teacher ? (
-          <Typography variant="h6" gutterBottom>
-            Teacher Name : {subjectDetails.teacher.name}
+
+        <SwitchContainer>
+          <SwitchBtn
+            active={selectedSection === "attendance"}
+            onClick={() => setSelectedSection("attendance")}
+          >
+            <TableChart sx={{ fontSize: 18 }} /> Attendance Logging
+          </SwitchBtn>
+          <SwitchBtn
+            active={selectedSection === "marks"}
+            onClick={() => setSelectedSection("marks")}
+          >
+            <InsertChart sx={{ fontSize: 18 }} /> Evaluation Grading
+          </SwitchBtn>
+        </SwitchContainer>
+      </Box>
+
+      {subloading ? (
+        <TableSkeleton rows={5} columns={3} />
+      ) : getresponse || studentRows.length === 0 ? (
+        <EmptyGlassCard>
+          <Typography variant="h6" sx={{ color: "#F8FAFC", fontWeight: 700 }}>
+            No Scholars Enrolled in This Subject Cohort
           </Typography>
-        ) : (
+          <Typography variant="body2" sx={{ color: "#94A3B8", mt: 0.5, mb: 2 }}>
+            Admit students into this academic cohort to begin recording attendance and grading exam results.
+          </Typography>
           <GreenButton
             variant="contained"
-            onClick={() =>
-              navigate("/Admin/teachers/addteacher/" + subjectDetails._id)
-            }
+            onClick={() => navigate(`/Admin/class/addstudents/${classID}`)}
           >
-            Add Subject Teacher
+            + Admit Scholar to Cohort
           </GreenButton>
-        )}
-      </>
-    );
-  };
-
-  // Main return statement for the component
-  return (
-    <>
-      {/* Conditional rendering based on loading state */}
-      {subloading ? (
-        <div> Loading...</div>
-      ) : ( // Main container for the component
-        <>
-          <Box sx={{ width: "100%", typography: "body1" }}>
-            <TabContext value={value}>
-              <Box sx={{ borderBottom: 1, borderColor: "divider" }}>
-                <TabList
-                  onChange={handleChange}
-                  sx={{
-                    position: "fixed",
-                    width: "100%",
-                    bgcolor: "background.paper",
-                    zIndex: 1,
-                  }}
-                >
-                  {/* Tab navigation */}
-                  <Tab label="Details" value="1" />
-                  <Tab label="Students" value="2" />
-                </TabList>
-              </Box>
-              <Container sx={{ marginTop: "3rem", marginBottom: "4rem" }}>
-                <TabPanel value="1">
-                  <SubjectDetailsSection />
-                </TabPanel>
-                <TabPanel value="2">
-                  <SubjectStudentsSection />
-                </TabPanel>
-              </Container>
-            </TabContext>
-          </Box>
-        </>
+        </EmptyGlassCard>
+      ) : (
+        <TableTemplate
+          buttonHaver={selectedSection === "attendance" ? AttendanceButtonHaver : MarksButtonHaver}
+          columns={studentColumns}
+          rows={studentRows}
+        />
       )}
-    </>
+    </Container>
   );
 };
 
-// Export the component
 export default ViewSubject;
+
+const HeaderCard = styled(Box)`
+  background: rgba(13, 22, 41, 0.75);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 20px;
+  padding: 28px;
+  margin-bottom: 24px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+`;
+
+const IconWrapper = styled(Box)`
+  width: 60px;
+  height: 60px;
+  border-radius: 16px;
+  background: rgba(0, 196, 159, 0.12);
+  border: 1px solid rgba(0, 196, 159, 0.25);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+`;
+
+const DetailTile = styled(Box)`
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 12px;
+  padding: 12px 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+`;
+
+const SwitchContainer = styled(Box)`
+  display: flex;
+  background: rgba(13, 22, 41, 0.6);
+  backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  padding: 4px;
+  gap: 4px;
+`;
+
+const SwitchBtn = styled.button`
+  background: ${(props) => (props.active ? "rgba(0, 163, 255, 0.18)" : "transparent")};
+  border: ${(props) => (props.active ? "1px solid rgba(0, 163, 255, 0.35)" : "1px solid transparent")};
+  color: ${(props) => (props.active ? "#00A3FF" : "#94A3B8")};
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-weight: 700;
+  font-size: 0.85rem;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+  &:hover {
+    color: #f8fafc;
+  }
+`;
+
+const EmptyGlassCard = styled(Box)`
+  background: rgba(13, 22, 41, 0.6);
+  backdrop-filter: blur(16px);
+  border: 1px dashed rgba(255, 255, 255, 0.12);
+  border-radius: 18px;
+  padding: 48px 24px;
+  text-align: center;
+`;
+
+const BackBtn = styled.button`
+  background: transparent;
+  border: none;
+  color: #94a3b8;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  font-weight: 600;
+  font-size: 0.9rem;
+  transition: all 0.2s;
+  &:hover {
+    color: #f8fafc;
+  }
+`;

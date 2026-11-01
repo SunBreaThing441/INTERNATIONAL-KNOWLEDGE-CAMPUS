@@ -1,79 +1,138 @@
-// Import necessary modules and components
-import React, { useEffect } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
-import {
-  Paper, Box, Checkbox
-} from '@mui/material';
-import { getAllComplains } from '../../../redux/complainRelated/complainHandle';
-import TableTemplate from '../../../components/TableTemplate';
+import React, { useEffect } from "react";
+import { useDispatch, useSelector } from "react-redux";
+import { Box, Typography, Checkbox } from "@mui/material";
+import { ReportProblemOutlined, VerifiedUser } from "@mui/icons-material";
+import { getAllComplains } from "../../../redux/complainRelated/complainHandle";
+import TableTemplate from "../../../components/TableTemplate";
+import { TableSkeleton } from "../../../components/LuminaSkeleton";
+import styled from "styled-components";
 
-// Define the SeeComplains component
 const SeeComplains = () => {
-  // Initialize dispatch and get data from Redux store
   const dispatch = useDispatch();
-  const { complainsList, loading, error, response } = useSelector(state => state.complain);
-  const { currentUser } = useSelector(state => state.user);
+  const { complainsList, loading, error, response } = useSelector(
+    (state) => state.complain
+  );
+  const { currentUser } = useSelector((state) => state.user);
 
-  // Fetch all complains when the component mounts
   useEffect(() => {
-    dispatch(getAllComplains(currentUser._id, "Complain"));
-  }, [currentUser._id, dispatch]);
+    if (currentUser?._id) {
+      dispatch(getAllComplains(currentUser._id, "Complain"));
+    }
+  }, [currentUser, dispatch]);
 
-  // Log any errors to the console
   if (error) {
     console.error(error);
   }
 
-  // Define the columns for the complains table
   const complainColumns = [
-    { id: 'user', label: 'User', minWidth: 170 },
-    { id: 'complaint', label: 'Complaint', minWidth: 100 },
-    { id: 'date', label: 'Date', minWidth: 170 },
+    { id: "user", label: "Originator / Scholar", minWidth: 180 },
+    { id: "complaint", label: "Ethical Dossier / Grievance Brief", minWidth: 320 },
+    { id: "date", label: "Logged Date", minWidth: 140 },
   ];
 
-  // Filter out invalid complaints before mapping
-  const validComplainsList = complainsList?.filter(complain => {
+  const validComplainsList = complainsList?.filter((complain) => {
     if (!complain || !complain.user || !complain.user.name) {
-      console.warn("Invalid complaint data:", complain);
-      return false; // Filter out this complaint
+      return false;
     }
-    return true; // Keep valid complaints
+    return true;
   });
 
-  // Map the valid complains data to the table rows format
-  const complainRows = validComplainsList?.map(complain => ({
-    user: complain.user.name,
-    complaint: complain.complaint || "No complaint provided",
-    date: complain.date ? new Date(complain.date).toISOString().substring(0, 10) : "Unknown Date",
-    id: complain._id || "No ID",
-  })) || []; // Ensure an empty array if validComplainsList is undefined
+  const complainRows =
+    validComplainsList?.map((complain) => ({
+      user: complain.user.name,
+      complaint: complain.complaint || "No grievance details specified",
+      date: complain.date
+        ? new Date(complain.date).toISOString().substring(0, 10)
+        : "Recent",
+      id: complain._id || "No ID",
+    })) || [];
 
-  // Define a component for the button in each row of the table
-  const ComplainButtonHaver = () => <Checkbox inputProps={{ 'aria-label': 'Checkbox demo' }} />;
+  const ComplainButtonHaver = () => (
+    <Checkbox
+      sx={{
+        color: "rgba(255, 255, 255, 0.4)",
+        "&.Mui-checked": {
+          color: "#00C49F",
+        },
+      }}
+    />
+  );
 
-  // Render the component
   return (
-    <>
-      {loading ? (
-        <div>Loading...</div>
-      ) : response ? (
-        /* Box to center the message */
-        <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
-          <div>
-            {/* Message to show when there are no complains */}
-            No Complains Right Now
-          </div>
+    <Box sx={{ width: "100%", p: { xs: 1, md: 3 } }}>
+      {/* Header Banner */}
+      <HeaderCard>
+        <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+          <IconWrapper>
+            <ReportProblemOutlined sx={{ fontSize: 26, color: "#F59E0B" }} />
+          </IconWrapper>
+          <Box>
+            <Typography variant="h5" sx={{ fontWeight: 800, color: "#F8FAFC", letterSpacing: "-0.01em" }}>
+              Ethical Oversight & Grievance Console
+            </Typography>
+            <Typography variant="body2" sx={{ color: "#94A3B8" }}>
+              UNESCO Global Standard 14: Transparent Review & Scholar Welfare Accountability
+            </Typography>
+          </Box>
         </Box>
+      </HeaderCard>
+
+      {loading ? (
+        <TableSkeleton rows={4} columns={3} />
+      ) : response || complainRows.length === 0 ? (
+        <EmptyStateCard>
+          <VerifiedUser sx={{ fontSize: 48, color: "#00C49F", mb: 1.5 }} />
+          <Typography variant="h6" sx={{ fontWeight: 700, color: "#F8FAFC" }}>
+            Institutional Integrity Metrics Clear
+          </Typography>
+          <Typography variant="body2" sx={{ color: "#94A3B8", maxWidth: 480, mt: 0.5 }}>
+            No unresolved scholar grievances or ethical complaints are registered in this academic cycle.
+          </Typography>
+        </EmptyStateCard>
       ) : (
-        <Paper sx={{ width: '100%', overflow: 'hidden' }}>
-          {Array.isArray(complainsList) && complainsList.length > 0 && (
-            <TableTemplate buttonHaver={ComplainButtonHaver} columns={complainColumns} rows={complainRows} />
-          )}
-        </Paper>
+        <TableTemplate
+          buttonHaver={ComplainButtonHaver}
+          columns={complainColumns}
+          rows={complainRows}
+        />
       )}
-    </>
+    </Box>
   );
 };
-  
-// Export the component
+
 export default SeeComplains;
+
+const HeaderCard = styled(Box)`
+  background: rgba(13, 22, 41, 0.75);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+  padding: 20px 24px;
+  margin-bottom: 24px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+`;
+
+const IconWrapper = styled(Box)`
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  background: rgba(245, 158, 11, 0.12);
+  border: 1px solid rgba(245, 158, 11, 0.25);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+`;
+
+const EmptyStateCard = styled(Box)`
+  background: rgba(13, 22, 41, 0.6);
+  backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+  padding: 48px 24px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  margin-top: 16px;
+`;

@@ -1,272 +1,223 @@
-// Import necessary modules and components from React and Material UI
-import * as React from "react";
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import {
-  Grid,
   Box,
+  Container,
   Typography,
-  Paper,
-  Checkbox,
-  FormControlLabel,
   TextField,
-  CssBaseline,
   IconButton,
   InputAdornment,
   CircularProgress,
+  Backdrop,
 } from "@mui/material";
-import { createTheme, ThemeProvider } from "@mui/material/styles";
-import { Visibility, VisibilityOff } from "@mui/icons-material";
-import bg from "../../assets/bg.png";
-import { DarkBlueButton } from "../../components/buttonStyles";
-import { registerUser } from "../../redux/userRelated/userHandle";
+import {
+  Visibility,
+  VisibilityOff,
+  Public,
+  ArrowForward,
+} from "@mui/icons-material";
 import styled from "styled-components";
+import { registerUser } from "../../redux/userRelated/userHandle";
 import Popup from "../../components/Popup";
+import { DarkBlueButton } from "../../components/buttonStyles";
 
-// Create a default theme for Material UI components
-const defaultTheme = createTheme();
-
-// Define the AdminRegisterPage component
 const AdminRegisterPage = () => {
-  // Initialize dispatch and navigate
   const dispatch = useDispatch();
   const navigate = useNavigate();
 
-  // Get data from Redux store
   const { status, currentUser, response, error, currentRole } = useSelector(
     (state) => state.user
   );
 
-  // State variables for toggle, loader, and popup
-  const [toggle, setToggle] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const [loader, setLoader] = useState(false);
   const [showPopup, setShowPopup] = useState(false);
   const [message, setMessage] = useState("");
 
-  // State variables for form field errors
-  const [emailError, setEmailError] = useState(false);
-  const [passwordError, setPasswordError] = useState(false);
-  const [adminNameError, setAdminNameError] = useState(false);
-  const [schoolNameError, setSchoolNameError] = useState(false);
+  const [adminName, setAdminName] = useState("");
+  const [schoolName, setSchoolName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
 
-  // Define the role
-  const role = "Admin";
-
-  // Handle form submission
-  const handleSubmit = (event) => {
-    event.preventDefault();
-
-    // Get form values
-    const name = event.target.adminName.value;
-    const schoolName = event.target.schoolName.value;
-    const email = event.target.email.value;
-    const password = event.target.password.value;
-
-    if (!name || !schoolName || !email || !password) {
-      if (!name) setAdminNameError(true);
-      if (!schoolName) setSchoolNameError(true);
-      if (!email) setEmailError(true);
-      if (!password) setPasswordError(true);
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    if (!adminName || !schoolName || !email || !password) {
+      setMessage("Please complete all registration fields.");
+      setShowPopup(true);
       return;
     }
-
-    // Define the fields to be submitted
-    const fields = { name, email, password, role, schoolName };
     setLoader(true);
-    // Dispatch action to register a new user
-    dispatch(registerUser(fields, role));
+    const fields = { name: adminName, email, password, schoolName };
+    dispatch(registerUser(fields, "Admin"));
   };
 
-  // Handle input change
-  const handleInputChange = (event) => {
-    const { name } = event.target;
-    if (name === "email") setEmailError(false);
-    if (name === "password") setPasswordError(false);
-    if (name === "adminName") setAdminNameError(false);
-    if (name === "schoolName") setSchoolNameError(false);
-  };
-
-  // Handle different statuses after submitting the form
   useEffect(() => {
-    if (
-      status === "success" ||
-      (currentUser !== null && currentRole === "Admin")
-    ) {
+    if (status === "success" || (currentUser !== null && currentRole === "Admin")) {
       navigate("/Admin/dashboard");
     } else if (status === "failed") {
-      setMessage(response);
-      setShowPopup(true);
       setLoader(false);
+      setMessage(response || "Registration failed");
+      setShowPopup(true);
     } else if (status === "error") {
-      console.log(error);
+      setLoader(false);
+      setMessage("Network Communication Failure. Ensure Backend is active on Port 5000.");
+      setShowPopup(true);
     }
-  }, [status, currentUser, currentRole, navigate, error, response]);
+  }, [status, currentRole, navigate, currentUser, response, error]);
 
-  // Render the component
   return (
-    <ThemeProvider theme={defaultTheme}>
-      {/* Main container for the registration page */}
-      <Grid container component="main" sx={{ height: "100vh" }}>
-        <CssBaseline />
-        <Grid item xs={12} sm={8} md={5} component={Paper} elevation={6} square>
-          <Box
-            // Box for the registration form
-            sx={{
-              my: 8,
-              mx: 4,
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "center",
-            }}
-          >
-            {/* Title of the form */}
-            <Typography variant="h4" sx={{ mb: 2, color: "#2c2143" }}>
-              Admin Register
-            </Typography>
-            {/* Description of the form */}
-            <Typography variant="h7">
-              Create your own school by registering as an admin.
-              <br />
-              {/* Additional description */}
-              You will be able to add students and faculty and manage the
-              system.
-            </Typography>
-            <Box
-              component="form"
-              noValidate
-              onSubmit={handleSubmit}
-              sx={{ mt: 2 }}
-            >
-              {/* Input field for admin's name */}
-              <TextField
-                margin="normal"
-                required
-                fullWidth
-                id="adminName"
-                label="Enter your name"
-                name="adminName"
-                autoComplete="name"
-                autoFocus
-                error={adminNameError}
-                helperText={adminNameError && "Name is required"}
-                onChange={handleInputChange}
-              />
-              {/* Input field for school's name */}
-              <TextField
-                margin="normal"
-                required
-                fullWidth
-                id="schoolName"
-                label="Create your school name"
-                name="schoolName"
-                autoComplete="off"
-                error={schoolNameError}
-                helperText={schoolNameError && "School name is required"}
-                onChange={handleInputChange}
-              />
-              {/* Input field for admin's email */}
-              <TextField
-                margin="normal"
-                required
-                fullWidth
-                id="email"
-                label="Enter your email"
-                name="email"
-                autoComplete="email"
-                error={emailError}
-                helperText={emailError && "Email is required"}
-                onChange={handleInputChange}
-              />
-              {/* Input field for admin's password */}
-              <TextField
-                margin="normal"
-                required
-                fullWidth
-                name="password"
-                label="Password"
-                type={toggle ? "text" : "password"}
-                id="password"
-                autoComplete="current-password"
-                error={passwordError}
-                helperText={passwordError && "Password is required"}
-                onChange={handleInputChange}
-                InputProps={{
-                  endAdornment: (
-                    <InputAdornment position="end">
-                      <IconButton onClick={() => setToggle(!toggle)}>
-                        {toggle ? <Visibility /> : <VisibilityOff />}
-                      </IconButton>
-                    </InputAdornment>
-                  ),
-                }}
-              />
-              {/* Checkbox for remember me */}
-              <Grid
-                container
-                sx={{ display: "flex", justifyContent: "space-between" }}
-              >
-                <FormControlLabel
-                  control={<Checkbox value="remember" color="primary" />}
-                  label="Remember me"
-                />
-              </Grid>
-              {/* Submit button */}
-              <DarkBlueButton
-                type="submit"
-                fullWidth
-                variant="contained"
-                sx={{ mt: 3, mb: 2 }}
-              >
-                {loader ? (
-                  <CircularProgress size={24} color="inherit" />
-                ) : (
-                  "Register"
-                )}
-              </DarkBlueButton>
-              {/* Link to login page */}
-              <Grid container>
-                <Grid>Already have an account?</Grid>
-                <Grid item sx={{ ml: 2 }}>
-                  <StyledLink to="/Adminlogin">Log in</StyledLink>
-                </Grid>
-              </Grid>
+    <PageWrapper>
+      <Container maxWidth="sm">
+        <GlassCard>
+          <Box sx={{ textAlign: "center", mb: 3 }}>
+            <Box sx={{ display: "inline-flex", alignItems: "center", gap: 1, mb: 1 }}>
+              <Public sx={{ color: "#00A3FF", fontSize: 22 }} />
+              <Typography variant="overline" sx={{ color: "#00A3FF", fontWeight: 700, letterSpacing: "0.1em" }}>
+                UNESCO Open Education Network
+              </Typography>
             </Box>
+            <Typography variant="h4" sx={{ fontWeight: 800, color: "#F8FAFC", letterSpacing: "-0.02em" }}>
+              Register Knowledge Hub
+            </Typography>
+            <Typography variant="body2" sx={{ color: "#94A3B8", mt: 0.5 }}>
+              Onboard your institution as an accredited Lumina Chancellor node
+            </Typography>
           </Box>
-        </Grid>
-        {/* Background image */}
-        <Grid
-          item
-          xs={false}
-          sm={4}
-          md={7}
-          sx={{
-            backgroundImage: `url(${bg})`,
-            backgroundRepeat: "no-repeat",
-            backgroundColor: (t) =>
-              t.palette.mode === "light"
-                ? t.palette.grey[50]
-                : t.palette.grey[900],
-            backgroundSize: "cover",
-            backgroundPosition: "center",
-          }}
-        />
-      </Grid>
-      {/* Popup component for displaying messages */}
-      <Popup
-        message={message}
-        setShowPopup={setShowPopup}
-        showPopup={showPopup}
-      />
-    </ThemeProvider>
+
+          <form onSubmit={handleSubmit}>
+            <GlassInput
+              fullWidth
+              label="Chancellor Full Name"
+              variant="outlined"
+              value={adminName}
+              onChange={(e) => setAdminName(e.target.value)}
+              placeholder="e.g. Dr. Eleanor Vance"
+              required
+              sx={{ mb: 2 }}
+            />
+            <GlassInput
+              fullWidth
+              label="Institution / School Name"
+              variant="outlined"
+              value={schoolName}
+              onChange={(e) => setSchoolName(e.target.value)}
+              placeholder="e.g. Oxford Open Academy"
+              required
+              sx={{ mb: 2 }}
+            />
+            <GlassInput
+              fullWidth
+              label="Official Institutional Email"
+              type="email"
+              variant="outlined"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="e.g. chancellor@oxford-open.edu"
+              required
+              sx={{ mb: 2 }}
+            />
+            <GlassInput
+              fullWidth
+              label="Master Security Passcode"
+              type={showPassword ? "text" : "password"}
+              variant="outlined"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="••••••••"
+              required
+              sx={{ mb: 3.5 }}
+              InputProps={{
+                endAdornment: (
+                  <InputAdornment position="end">
+                    <IconButton
+                      onClick={() => setShowPassword(!showPassword)}
+                      edge="end"
+                      sx={{ color: "#94A3B8" }}
+                    >
+                      {showPassword ? <VisibilityOff /> : <Visibility />}
+                    </IconButton>
+                  </InputAdornment>
+                ),
+              }}
+            />
+
+            <DarkBlueButton
+              type="submit"
+              fullWidth
+              disabled={loader}
+              sx={{ py: 1.5, fontSize: "0.95rem" }}
+            >
+              {loader ? (
+                <CircularProgress size={24} sx={{ color: "#FFFFFF" }} />
+              ) : (
+                <Box sx={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 1 }}>
+                  <span>Provision Institutional Node</span>
+                  <ArrowForward sx={{ fontSize: 18 }} />
+                </Box>
+              )}
+            </DarkBlueButton>
+          </form>
+
+          <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mt: 3, pt: 2, borderTop: "1px solid rgba(255, 255, 255, 0.08)" }}>
+            <Link to="/" style={{ color: "#94A3B8", fontSize: "0.82rem" }}>
+              ← Return Home
+            </Link>
+            <Link to="/Adminlogin" style={{ color: "#00A3FF", fontSize: "0.82rem", fontWeight: 700 }}>
+              Existing Chancellor? Sign In
+            </Link>
+          </Box>
+        </GlassCard>
+      </Container>
+
+      <Backdrop sx={{ color: "#fff", zIndex: (theme) => theme.zIndex.drawer + 1 }} open={loader}>
+        <CircularProgress color="inherit" />
+      </Backdrop>
+
+      <Popup message={message} setShowPopup={setShowPopup} showPopup={showPopup} />
+    </PageWrapper>
   );
 };
 
 export default AdminRegisterPage;
 
-// Styled component for the link
-const StyledLink = styled(Link)`
-  margin-top: 9px;
-  text-decoration: none;
-  color: #0008c5;
+const PageWrapper = styled.div`
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 16px;
+`;
+
+const GlassCard = styled.div`
+  background: rgba(15, 26, 58, 0.75);
+  backdrop-filter: blur(24px) saturate(190%);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 24px;
+  padding: 40px 32px;
+  box-shadow: 0 24px 64px -12px rgba(0, 0, 0, 0.65), 0 0 32px rgba(0, 119, 212, 0.15);
+`;
+
+const GlassInput = styled(TextField)`
+  && {
+    .MuiInputLabel-root {
+      color: #94A3B8;
+      font-size: 0.88rem;
+    }
+    .MuiOutlinedInput-root {
+      background: rgba(7, 13, 30, 0.55);
+      border-radius: 12px;
+      color: #F8FAFC;
+      fieldset {
+        border-color: rgba(255, 255, 255, 0.12);
+      }
+      &:hover fieldset {
+        border-color: rgba(0, 119, 212, 0.45);
+      }
+      &.Mui-focused fieldset {
+        border-color: #00A3FF;
+        box-shadow: 0 0 12px rgba(0, 163, 255, 0.25);
+      }
+    }
+  }
 `;

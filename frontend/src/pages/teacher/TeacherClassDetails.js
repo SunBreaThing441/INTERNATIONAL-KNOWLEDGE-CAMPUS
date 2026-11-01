@@ -1,196 +1,164 @@
-// eslint-disable-next-line no-unused-vars
-import { useEffect, useState } from "react";
-import * as React from 'react';
-import { useDispatch, useSelector } from 'react-redux';
-import { useNavigate } from 'react-router-dom'
+import React, { useEffect } from "react";
+import { useDispatch, useSelector } from "react-redux";
+import { useNavigate } from "react-router-dom";
 import { getClassStudents } from "../../redux/sclassRelated/sclassHandle";
-import { Paper, Box, Typography, ButtonGroup, Button, Popper, Grow, ClickAwayListener, MenuList, MenuItem } from '@mui/material';
-import { BlackButton, BlueButton} from "../../components/buttonStyles";
+import {
+  Box,
+  Typography,
+  Container,
+} from "@mui/material";
+import { School, People } from "@mui/icons-material";
+import { BlueButton, GreenButton } from "../../components/buttonStyles";
 import TableTemplate from "../../components/TableTemplate";
-import { KeyboardArrowDown, KeyboardArrowUp } from "@mui/icons-material";
+import { TableSkeleton } from "../../components/LuminaSkeleton";
+import styled from "styled-components";
 
 const TeacherClassDetails = () => {
-    // Initialize navigation hook
-    const navigate = useNavigate()
-    const dispatch = useDispatch();
-    const { sclassStudents, loading, error, getresponse } = useSelector((state) => state.sclass);
-   
-    // Extract class ID and subject ID from the current user's data
-    const { currentUser } = useSelector((state) => state.user);
-    const classID = currentUser.teachSclass?._id
-    const subjectID = currentUser.teachSubject?._id
+  const navigate = useNavigate();
+  const dispatch = useDispatch();
+  const { sclassStudents, loading, error, getresponse } = useSelector(
+    (state) => state.sclass
+  );
 
-    useEffect(() => {
-        dispatch(getClassStudents(classID));
-    }, [dispatch, classID])
+  const { currentUser } = useSelector((state) => state.user);
+  const classID = currentUser?.teachSclass?._id;
+  const subjectID = currentUser?.teachSubject?._id;
+  const sclassName = currentUser?.teachSclass?.sclassName || "Assigned Cohort";
+  const subjectName = currentUser?.teachSubject?.subName || "General Discipline";
 
-    // Log error if it exists
-    if (error) {
-        console.log(error)
+  useEffect(() => {
+    if (classID) {
+      dispatch(getClassStudents(classID));
     }
-    // Define columns for the student table
-    const studentColumns = [
-        { id: 'name', label: 'Name', minWidth: 170 },
-        { id: 'rollNum', label: 'Roll Number', minWidth: 100 },
-    ]
-    // Map student data to table rows
-    const studentRows = sclassStudents.map((student) => {
-        return {
-            // Extract name, roll number, and ID from each student
-            // These are used to display the student's information in the table
-            name: student.name,
-            rollNum: student.rollNum,
-            id: student._id,
-        };
-    })
+  }, [dispatch, classID]);
 
-    const StudentsButtonHaver = ({ row }) => {
-        // Define options for the split button
-        const options = ['Take Attendance', 'Provide Marks'];
+  if (error) {
+    console.error(error);
+  }
 
-        const [open, setOpen] = React.useState(false);
-        const anchorRef = React.useRef(null);
-        const [selectedIndex, setSelectedIndex] = React.useState(0);
+  const studentColumns = [
+    { id: "rollNum", label: "Roll No.", minWidth: 100 },
+    { id: "name", label: "Scholar Name", minWidth: 200 },
+  ];
 
-        const handleClick = () => {
-            console.info(`You clicked ${options[selectedIndex]}`);
-            // Navigate based on the selected option
-            if (selectedIndex === 0) {
-                handleAttendance();
-            } else if (selectedIndex === 1) {
-                handleMarks();
-            }
-        };
+  const studentRows =
+    Array.isArray(sclassStudents) && sclassStudents.length > 0
+      ? sclassStudents.map((student) => ({
+          rollNum: student.rollNum,
+          name: student.name,
+          id: student._id,
+        }))
+      : [];
 
-        // Function to handle navigation to the attendance page
-        const handleAttendance = () => {
-            navigate(`/Teacher/class/student/attendance/${row.id}/${subjectID}`)
-        }
-        // Function to handle navigation to the marks page
-        const handleMarks = () => {
-            navigate(`/Teacher/class/student/marks/${row.id}/${subjectID}`)
-        };
-        // Function to handle the click event of a menu item
-        const handleMenuItemClick = (event, index) => {
-            setSelectedIndex(index);
-            setOpen(false);
-        };
-        // Function to toggle the open/close state of the menu
-        const handleToggle = () => {
-            setOpen((prevOpen) => !prevOpen);
-        };
-        // Function to handle the close event of the menu
-        const handleClose = (event) => {
-            if (anchorRef.current && anchorRef.current.contains(event.target)) {
-                return;
-            }
-            // Close the menu
-            setOpen(false);
-        };
-        return (
-            <>
-                <BlueButton
-                    variant="contained"
-                    onClick={() =>
-                        // Navigate to the student view page
-                        navigate("/Teacher/class/student/" + row.id)
-                    }
-                >
-                    View
-                </BlueButton>
-                <React.Fragment>
-                    <ButtonGroup variant="contained" ref={anchorRef} aria-label="split button">
-                        {/* Main button */}
-                        <Button onClick={handleClick}>{options[selectedIndex]}</Button>
-                        <BlackButton
-                            size="small"
-                            aria-controls={open ? 'split-button-menu' : undefined}
-                            aria-expanded={open ? 'true' : undefined}
-                            aria-label="select merge strategy"
-                            aria-haspopup="menu"
-                            onClick={handleToggle}
-                        >
-                            {open ? <KeyboardArrowUp /> : <KeyboardArrowDown />}
-                        </BlackButton>
-                    </ButtonGroup>
-                    <Popper
-                        // Popper component for the menu
-                        sx={{
-                            zIndex: 1,
-                        }}
-                        open={open}
-                        anchorEl={anchorRef.current}
-                        role={undefined}
-                        transition
-                        disablePortal
-                    >
-                        {/* Grow transition for the menu */}
-                        {({ TransitionProps, placement }) => (
-                            <Grow
-                                {...TransitionProps}
-                                style={{
-                                    transformOrigin:
-                                        placement === 'bottom' ? 'center top' : 'center bottom',
-                                }}
-                            >
-                                {/* Menu component */}
-                                <Paper>
-                                    <ClickAwayListener onClickAway={handleClose}>
-                                        <MenuList id="split-button-menu" autoFocusItem>
-                                            {options.map((option, index) => (
-                                                <MenuItem
-                                                    key={option}
-                                                    disabled={index === 2}
-                                                    selected={index === selectedIndex}
-                                                    onClick={(event) => handleMenuItemClick(event, index)}
-                                                >
-                                                    {option}
-                                                </MenuItem>
-                                            ))}
-                                        </MenuList>
-                                    </ClickAwayListener>
-                                </Paper>
-                            </Grow>
-                        )}
-                    </Popper>
-                </React.Fragment>
-            </>
-        );
-    };
+  const StudentsButtonHaver = ({ row }) => (
+    <Box sx={{ display: "flex", gap: 1, justifyContent: "center" }}>
+      <BlueButton
+        size="small"
+        variant="contained"
+        onClick={() => navigate(`/Teacher/class/student/${row.id}`)}
+      >
+        Dossier
+      </BlueButton>
 
-    return (
+      {subjectID && (
         <>
-            {/* Display loading message while data is being fetched */}
-            {loading ? (
-                <div>Loading...</div>
-            ) : (
-                <>
-                    {/* Display class details */}
-                    <Typography variant="h4" align="center" gutterBottom>
-                        Class Details
-                    </Typography>
-                    {/* Check if there is a response from the server */}
-                    {getresponse ? (
-                        <>
-                            <Box sx={{ display: 'flex', justifyContent: 'flex-end', marginTop: '16px' }}>
-                                No Students Found
-                            </Box>
-                        </>
-                    ) : (
-                        <Paper sx={{ width: '100%', overflow: 'hidden' }}>
-                            <Typography variant="h5" gutterBottom>
-                                Students List:
-                            </Typography>
-                            {/* Check if sclassStudents is an array and has data */}
-                            {Array.isArray(sclassStudents) && sclassStudents.length > 0 &&
-                                <TableTemplate buttonHaver={StudentsButtonHaver} columns={studentColumns} rows={studentRows} />
-                            }
-                        </Paper>
-                    )}
-                </>
-            )}
+          <GreenButton
+            size="small"
+            variant="contained"
+            onClick={() =>
+              navigate(`/Teacher/class/student/attendance/${row.id}/${subjectID}`)
+            }
+          >
+            Attendance
+          </GreenButton>
+          <BlueButton
+            size="small"
+            variant="contained"
+            onClick={() =>
+              navigate(`/Teacher/class/student/marks/${row.id}/${subjectID}`)
+            }
+          >
+            Grade
+          </BlueButton>
         </>
-    );
+      )}
+    </Box>
+  );
+
+  return (
+    <Container maxWidth="xl" sx={{ py: 4, mb: 6 }}>
+      {/* Header Banner */}
+      <HeaderCard>
+        <Box sx={{ display: "flex", alignItems: "center", gap: 2.5, flexWrap: "wrap" }}>
+          <IconWrapper>
+            <School sx={{ fontSize: 32, color: "#00C49F" }} />
+          </IconWrapper>
+          <Box sx={{ flexGrow: 1 }}>
+            <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 0.5 }}>
+              <span className="lumina-badge emerald">Classroom Roster</span>
+              <span className="lumina-badge">Cohort: {sclassName}</span>
+            </Box>
+            <Typography variant="h4" sx={{ fontWeight: 800, color: "#F8FAFC", letterSpacing: "-0.02em" }}>
+              Academic Cohort Roster: {sclassName}
+            </Typography>
+            <Typography variant="body2" sx={{ color: "#94A3B8" }}>
+              Facilitator Discipline: {subjectName} • Active Enrollees: {studentRows.length}
+            </Typography>
+          </Box>
+        </Box>
+      </HeaderCard>
+
+      {loading ? (
+        <TableSkeleton rows={5} columns={3} />
+      ) : getresponse || studentRows.length === 0 ? (
+        <EmptyGlassCard>
+          <People sx={{ fontSize: 44, color: "#00C49F", mb: 1.5 }} />
+          <Typography variant="h6" sx={{ color: "#F8FAFC", fontWeight: 700 }}>
+            No Scholars Enrolled in This Cohort
+          </Typography>
+          <Typography variant="body2" sx={{ color: "#94A3B8", mt: 0.5 }}>
+            Students will automatically appear here once allocated by the Chancellor.
+          </Typography>
+        </EmptyGlassCard>
+      ) : (
+        <TableTemplate
+          buttonHaver={StudentsButtonHaver}
+          columns={studentColumns}
+          rows={studentRows}
+        />
+      )}
+    </Container>
+  );
 };
 
 export default TeacherClassDetails;
+
+const HeaderCard = styled(Box)`
+  background: rgba(13, 22, 41, 0.75);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 20px;
+  padding: 28px;
+  margin-bottom: 24px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+`;
+
+const IconWrapper = styled(Box)`
+  width: 60px;
+  height: 60px;
+  border-radius: 16px;
+  background: rgba(0, 196, 159, 0.12);
+  border: 1px solid rgba(0, 196, 159, 0.25);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+`;
+
+const EmptyGlassCard = styled(Box)`
+  background: rgba(13, 22, 41, 0.6);
+  backdrop-filter: blur(16px);
+  border: 1px dashed rgba(255, 255, 255, 0.12);
+  border-radius: 18px;
+  padding: 48px 24px;
+  text-align: center;
+`;

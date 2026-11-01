@@ -1,231 +1,345 @@
-import { useEffect } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
+import React, { useEffect, useState, useRef } from "react";
+import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
-import { getAllStudents } from '../../../redux/studentRelated/studentHandle';
-import { deleteUser } from '../../../redux/userRelated/userHandle';
+import { getAllStudents } from "../../../redux/studentRelated/studentHandle";
+import { deleteUser } from "../../../redux/userRelated/userHandle";
 import {
-    Paper, Box, IconButton
-} from '@mui/material';
-import PersonRemoveIcon from '@mui/icons-material/PersonRemove';
-import { BlackButton, BlueButton, GreenButton, ButtonContainer } from '../../../components/buttonStyles';
-import TableTemplate from '../../../components/TableTemplate';
-import PersonAddAlt1Icon from '@mui/icons-material/PersonAddAlt1';
-import SpeedDialTemplate from '../../../components/SpeedDialTemplate';
+  Box,
+  IconButton,
+  Typography,
+  Button,
+  ButtonGroup,
+  ClickAwayListener,
+  Grow,
+  Paper,
+  Popper,
+  MenuItem,
+  MenuList,
+} from "@mui/material";
+import PersonRemoveIcon from "@mui/icons-material/PersonRemove";
+import SchoolIcon from "@mui/icons-material/School";
+import {
+  BlackButton,
+  BlueButton,
+  GreenButton,
+  ButtonContainer,
+} from "../../../components/buttonStyles";
+import TableTemplate from "../../../components/TableTemplate";
+import PersonAddAlt1Icon from "@mui/icons-material/PersonAddAlt1";
+import SpeedDialTemplate from "../../../components/SpeedDialTemplate";
+import { KeyboardArrowUp, KeyboardArrowDown } from "@mui/icons-material";
+import Popup from "../../../components/Popup";
+import { TableSkeleton } from "../../../components/LuminaSkeleton";
+import styled from "styled-components";
 
-import * as React from 'react';
-import Button from '@mui/material/Button';
-import ButtonGroup from '@mui/material/ButtonGroup';
-// import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
-import { KeyboardArrowUp, KeyboardArrowDown } from '@mui/icons-material';
-import ClickAwayListener from '@mui/material/ClickAwayListener';
-import Grow from '@mui/material/Grow';
-import Popper from '@mui/material/Popper';
-import MenuItem from '@mui/material/MenuItem';
-import MenuList from '@mui/material/MenuList';
-import Popup from '../../../components/Popup';
-// Define the ShowStudents component
 const ShowStudents = () => {
+  const navigate = useNavigate();
+  const dispatch = useDispatch();
+  const { studentsList, loading, error, response } = useSelector(
+    (state) => state.student
+  );
+  const { currentUser } = useSelector((state) => state.user);
 
-    const navigate = useNavigate()
-    const dispatch = useDispatch();
-    const { studentsList, loading, error, response } = useSelector((state) => state.student);
-    const { currentUser } = useSelector(state => state.user)
-
-    // Fetch all students when the component mounts
-    useEffect(() => {
-        dispatch(getAllStudents(currentUser._id));
-    }, [currentUser._id, dispatch]);
-
-    // Log any errors to the console
-    if (error) {
-        console.log(error);
+  useEffect(() => {
+    if (currentUser?._id) {
+      dispatch(getAllStudents(currentUser._id));
     }
+  }, [currentUser, dispatch]);
 
-    const [showPopup, setShowPopup] = React.useState(false);
+  if (error) {
+    console.log(error);
+  }
 
-    // State for managing popup messages
-    // eslint-disable-next-line no-unused-vars
-    const [message, setMessage] = React.useState("");
+  const [showPopup, setShowPopup] = useState(false);
+  const [message] = useState("");
 
-    const deleteHandler = (deleteID, address) => {
-        console.log(deleteID);
-        console.log(address);
-        dispatch(deleteUser(deleteID, address))
-            .then(() => {
-                dispatch(getAllStudents(currentUser._id));
-            })
-    }
+  const deleteHandler = (deleteID, address) => {
+    dispatch(deleteUser(deleteID, address)).then(() => {
+      dispatch(getAllStudents(currentUser._id));
+    });
+  };
 
-    // Define the columns for the students table
-    const studentColumns = [
-        { id: 'name', label: 'Name', minWidth: 170 },
-        { id: 'rollNum', label: 'Roll Number', minWidth: 100 },
-        { id: 'sclassName', label: 'Class', minWidth: 170 },
-    ]
+  const studentColumns = [
+    { id: "name", label: "Scholar Name", minWidth: 180 },
+    { id: "rollNum", label: "Roll ID", minWidth: 100 },
+    { id: "sclassName", label: "Enrolled Cohort", minWidth: 160 },
+  ];
 
-    // Map the students data to the table rows format
-    const studentRows = studentsList && studentsList.length > 0 && studentsList.map((student) => {
-        return {
-            name: student.name,
-            rollNum: student.rollNum,
-            sclassName: student.sclassName.sclassName,
-            id: student._id,
-        };
-    })
+  const studentRows =
+    Array.isArray(studentsList) && studentsList.length > 0
+      ? studentsList.map((student) => ({
+          name: student.name,
+          rollNum: student.rollNum,
+          sclassName: student.sclassName?.sclassName || "Unassigned",
+          id: student._id,
+        }))
+      : [];
 
-    // Define a component for the button in each row of the table
-    const StudentButtonHaver = ({ row }) => {
-        // Define the options for the dropdown menu
-        const options = ['Take Attendance', 'Provide Marks'];
+  const StudentButtonHaver = ({ row }) => {
+    const options = ["Mark Attendance", "Record Grades"];
+    const [open, setOpen] = useState(false);
+    const anchorRef = useRef(null);
+    const [selectedIndex, setSelectedIndex] = useState(0);
 
-        // State for managing the dropdown menu
-        const [open, setOpen] = React.useState(false);
-        const anchorRef = React.useRef(null);
-        const [selectedIndex, setSelectedIndex] = React.useState(0);
-
-        const handleClick = () => {
-            console.info(`You clicked ${options[selectedIndex]}`);
-            // Handle the selected option
-            if (selectedIndex === 0) {
-                handleAttendance();
-            } else if (selectedIndex === 1) {
-                handleMarks();
-            }
-        };
-
-        // Navigate to the attendance page
-        const handleAttendance = () => {
-            navigate("/Admin/students/student/attendance/" + row.id)
-        }
-        const handleMarks = () => {
-            // Navigate to the marks page
-            navigate("/Admin/students/student/marks/" + row.id)
-        };
-
-        const handleMenuItemClick = (event, index) => {
-            setSelectedIndex(index);
-            setOpen(false);
-        };
-
-        const handleToggle = () => {
-            setOpen((prevOpen) => !prevOpen);
-        };
-
-        const handleClose = (event) => {
-            if (anchorRef.current && anchorRef.current.contains(event.target)) {
-                return;
-            }
-
-            setOpen(false);
-        };
-        return (
-            // Render the buttons for each row
-            <>
-                <IconButton onClick={() => deleteHandler(row.id, "Student")}>
-                    <PersonRemoveIcon color="error" />
-                </IconButton>
-                <BlueButton variant="contained"
-                    onClick={() => navigate("/Admin/students/student/" + row.id)}>
-                    View
-                </BlueButton>
-                <React.Fragment>
-                    <ButtonGroup variant="contained" ref={anchorRef} aria-label="split button">
-                        <Button onClick={handleClick}>{options[selectedIndex]}</Button>
-                        <BlackButton
-                            size="small"
-                            aria-controls={open ? 'split-button-menu' : undefined}
-                            aria-expanded={open ? 'true' : undefined}
-                            aria-label="select merge strategy"
-                            aria-haspopup="menu"
-                            onClick={handleToggle}
-                        >
-                            {open ? <KeyboardArrowUp /> : <KeyboardArrowDown />}
-                        </BlackButton>
-                    </ButtonGroup>
-                    <Popper
-                        sx={{
-                            zIndex: 1,
-                        }}
-                        open={open}
-                        anchorEl={anchorRef.current}
-                        role={undefined}
-                        transition
-                        disablePortal
-                    >
-                        {({ TransitionProps, placement }) => (
-                            <Grow
-                                {...TransitionProps}
-                                style={{
-                                    transformOrigin:
-                                        placement === 'bottom' ? 'center top' : 'center bottom',
-                                }}
-                            >
-                                <Paper>
-                                    <ClickAwayListener onClickAway={handleClose}>
-                                        <MenuList id="split-button-menu" autoFocusItem>
-                                            {options.map((option, index) => (
-                                                <MenuItem
-                                                    key={option}
-                                                    disabled={index === 2}
-                                                    selected={index === selectedIndex}
-                                                    onClick={(event) => handleMenuItemClick(event, index)}
-                                                >
-                                                    {option}
-                                                </MenuItem>
-                                            ))}
-                                        </MenuList>
-                                    </ClickAwayListener>
-                                </Paper>
-                            </Grow>
-                        )}
-                    </Popper>
-                </React.Fragment>
-            </>
-        );
+    const handleClick = () => {
+      if (selectedIndex === 0) {
+        navigate("/Admin/students/student/attendance/" + row.id);
+      } else if (selectedIndex === 1) {
+        navigate("/Admin/students/student/marks/" + row.id);
+      }
     };
 
-    // Define the actions for the speed dial
-    const actions = [
-        {
-            icon: <PersonAddAlt1Icon color="primary" />, name: 'Add New Student',
-            action: () => navigate("/Admin/addstudents")
-        },
-        {
-            icon: <PersonRemoveIcon color="error" />, name: 'Delete All Students',
-            action: () => deleteHandler(currentUser._id, "Students")
-        },
-    ];
+    const handleMenuItemClick = (event, index) => {
+      setSelectedIndex(index);
+      setOpen(false);
+      if (index === 0) {
+        navigate("/Admin/students/student/attendance/" + row.id);
+      } else {
+        navigate("/Admin/students/student/marks/" + row.id);
+      }
+    };
 
-    // Render the component
+    const handleToggle = () => {
+      setOpen((prevOpen) => !prevOpen);
+    };
+
+    const handleClose = (event) => {
+      if (anchorRef.current && anchorRef.current.contains(event.target)) {
+        return;
+      }
+      setOpen(false);
+    };
+
     return (
-        <>
-            {loading ?
-                <div>Loading...</div>
-                :
-                <>
-                    {response ?
-                        // Box to center the message
-                        <Box sx={{ display: 'flex', justifyContent: 'center', marginTop: '16px' }}>
-                            <ButtonContainer>
-                              <GreenButton variant="contained" onClick={() => navigate("/Admin/addstudents")}>
-                                  Add Students
-                              </GreenButton>
-                            </ButtonContainer>
-                        </Box>
-                        // Table to show the students
-                        :
-                        <Paper sx={{ width: '100%', overflow: 'hidden' }}>
-                            {Array.isArray(studentsList) && studentsList.length > 0 &&
-                                <TableTemplate buttonHaver={StudentButtonHaver} columns={studentColumns} rows={studentRows} />
-                            }
-                            <SpeedDialTemplate actions={actions} />
-                        </Paper>
-                    }
-                </>
-            }
-            <Popup message={message} setShowPopup={setShowPopup} showPopup={showPopup} />
-        </>
+      <ButtonContainer>
+        <IconButton
+          onClick={() => deleteHandler(row.id, "Student")}
+          sx={{
+            color: "#EF4444",
+            "&:hover": { background: "rgba(239, 68, 68, 0.15)" },
+          }}
+        >
+          <PersonRemoveIcon />
+        </IconButton>
+        <BlueButton
+          variant="contained"
+          onClick={() => navigate("/Admin/students/student/" + row.id)}
+        >
+          Inspect
+        </BlueButton>
+
+        <Box sx={{ display: "inline-flex" }}>
+          <ButtonGroup
+            variant="contained"
+            ref={anchorRef}
+            sx={{
+              background: "rgba(255, 255, 255, 0.08)",
+              border: "1px solid rgba(255, 255, 255, 0.12)",
+              borderRadius: "10px",
+              overflow: "hidden",
+            }}
+          >
+            <Button
+              onClick={handleClick}
+              sx={{
+                background: "transparent",
+                color: "#F8FAFC",
+                textTransform: "none",
+                fontSize: "0.8rem",
+                fontWeight: 600,
+                px: 1.5,
+                "&:hover": { background: "rgba(0, 163, 255, 0.2)" },
+              }}
+            >
+              {options[selectedIndex]}
+            </Button>
+            <BlackButton
+              size="small"
+              onClick={handleToggle}
+              sx={{
+                px: 0.5,
+                minWidth: "auto",
+                background: "rgba(255, 255, 255, 0.05)",
+                color: "#94A3B8",
+              }}
+            >
+              {open ? <KeyboardArrowUp /> : <KeyboardArrowDown />}
+            </BlackButton>
+          </ButtonGroup>
+          <Popper
+            sx={{ zIndex: 1300 }}
+            open={open}
+            anchorEl={anchorRef.current}
+            role={undefined}
+            transition
+            disablePortal
+          >
+            {({ TransitionProps, placement }) => (
+              <Grow
+                {...TransitionProps}
+                style={{
+                  transformOrigin:
+                    placement === "bottom" ? "center top" : "center bottom",
+                }}
+              >
+                <Paper
+                  sx={{
+                    background: "rgba(13, 22, 41, 0.95)",
+                    backdropFilter: "blur(20px)",
+                    border: "1px solid rgba(255, 255, 255, 0.12)",
+                    borderRadius: "12px",
+                    boxShadow: "0 10px 30px rgba(0,0,0,0.5)",
+                    mt: 1,
+                  }}
+                >
+                  <ClickAwayListener onClickAway={handleClose}>
+                    <MenuList id="split-button-menu" autoItemFocus>
+                      {options.map((option, index) => (
+                        <MenuItem
+                          key={option}
+                          selected={index === selectedIndex}
+                          onClick={(event) => handleMenuItemClick(event, index)}
+                          sx={{
+                            color: "#F8FAFC",
+                            fontSize: "0.85rem",
+                            "&.Mui-selected": {
+                              background: "rgba(0, 163, 255, 0.2)",
+                            },
+                            "&:hover": { background: "rgba(0, 163, 255, 0.15)" },
+                          }}
+                        >
+                          {option}
+                        </MenuItem>
+                      ))}
+                    </MenuList>
+                  </ClickAwayListener>
+                </Paper>
+              </Grow>
+            )}
+          </Popper>
+        </Box>
+      </ButtonContainer>
     );
+  };
+
+  const actions = [
+    {
+      icon: <PersonAddAlt1Icon color="primary" />,
+      name: "Enroll New Scholar",
+      action: () => navigate("/Admin/addstudents"),
+    },
+    {
+      icon: <PersonRemoveIcon color="error" />,
+      name: "Purge All Scholars",
+      action: () => deleteHandler(currentUser._id, "Students"),
+    },
+  ];
+
+  return (
+    <Box sx={{ width: "100%", p: { xs: 1, md: 3 } }}>
+      {/* Header Banner */}
+      <HeaderCard>
+        <Box
+          sx={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            flexWrap: "wrap",
+            gap: 2,
+          }}
+        >
+          <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+            <IconWrapper>
+              <SchoolIcon sx={{ fontSize: 26, color: "#00C49F" }} />
+            </IconWrapper>
+            <Box>
+              <Typography
+                variant="h5"
+                sx={{
+                  fontWeight: 800,
+                  color: "#F8FAFC",
+                  letterSpacing: "-0.01em",
+                }}
+              >
+                Global Scholar Roster & Enrollee Registry
+              </Typography>
+              <Typography variant="body2" sx={{ color: "#94A3B8" }}>
+                UNESCO Open Education Network • Active Scholars: {studentRows.length}
+              </Typography>
+            </Box>
+          </Box>
+          <GreenButton variant="contained" onClick={() => navigate("/Admin/addstudents")}>
+            + Enroll Scholar
+          </GreenButton>
+        </Box>
+      </HeaderCard>
+
+      {loading ? (
+        <TableSkeleton rows={5} columns={4} />
+      ) : response || studentRows.length === 0 ? (
+        <EmptyStateCard>
+          <SchoolIcon sx={{ fontSize: 48, color: "#00C49F", mb: 1.5 }} />
+          <Typography variant="h6" sx={{ fontWeight: 700, color: "#F8FAFC" }}>
+            No Scholars Enrolled in Current Registry
+          </Typography>
+          <Typography
+            variant="body2"
+            sx={{ color: "#94A3B8", maxWidth: 460, mt: 0.5, mb: 2 }}
+          >
+            Admit new students into academic cohorts to track attendance credentials and curriculum grading.
+          </Typography>
+          <GreenButton variant="contained" onClick={() => navigate("/Admin/addstudents")}>
+            Enroll First Scholar
+          </GreenButton>
+        </EmptyStateCard>
+      ) : (
+        <>
+          <TableTemplate
+            buttonHaver={StudentButtonHaver}
+            columns={studentColumns}
+            rows={studentRows}
+          />
+          <SpeedDialTemplate actions={actions} />
+        </>
+      )}
+      <Popup message={message} setShowPopup={setShowPopup} showPopup={showPopup} />
+    </Box>
+  );
 };
-// Export the component
+
 export default ShowStudents;
+
+const HeaderCard = styled(Box)`
+  background: rgba(13, 22, 41, 0.75);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+  padding: 20px 24px;
+  margin-bottom: 24px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+`;
+
+const IconWrapper = styled(Box)`
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  background: rgba(0, 196, 159, 0.12);
+  border: 1px solid rgba(0, 196, 159, 0.25);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+`;
+
+const EmptyStateCard = styled(Box)`
+  background: rgba(13, 22, 41, 0.6);
+  backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+  padding: 48px 24px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  margin-top: 16px;
+`;

@@ -1,48 +1,60 @@
-import React from 'react';
-import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
+import React from "react";
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
+import { Box, Typography } from "@mui/material";
 
-// Define the colors for the pie chart segments
-const COLORS = ['#326e0a', '#930909'];
+// UNESCO Lumina Palette: Present = Emerald Green, Absent = Crimson/Slate
+const COLORS = ["#00C49F", "#EF4444"];
 
-// Calculate the radian value for the pie chart
-const RADIAN = Math.PI / 180;
-// Function to render custom labels on the pie chart segments
-const renderCustomizedLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, percent, index }) => {
-    const radius = innerRadius + (outerRadius - innerRadius) * 0.5; // Calculate the radius for the label
-    const x = cx + radius * Math.cos(-midAngle * RADIAN);
-    const y = cy + radius * Math.sin(-midAngle * RADIAN);
-
+const CustomTooltip = ({ active, payload }) => {
+  if (active && payload && payload.length) {
+    const data = payload[0];
     return (
-        <text x={x} y={y} fill="white" textAnchor={x > cx ? 'start' : 'end'} dominantBaseline="central">
-            {`${(percent * 100).toFixed(0)}%`}
-        </text>
+      <Box
+        sx={{
+          background: "rgba(7, 13, 30, 0.95)",
+          backdropFilter: "blur(12px)",
+          border: "1px solid rgba(255, 255, 255, 0.15)",
+          borderRadius: "10px",
+          p: 1.5,
+          boxShadow: "0 8px 24px rgba(0, 0, 0, 0.5)",
+        }}
+      >
+        <Typography variant="body2" sx={{ fontWeight: 700, color: data.payload.fill || "#FFFFFF" }}>
+          {data.name}: {data.value} Sessions
+        </Typography>
+      </Box>
     );
+  }
+  return null;
 };
 
-// CustomPieChart component
 const CustomPieChart = ({ data }) => {
-    return (
-        <ResponsiveContainer width="100%" height={400}>
-            <PieChart>
-                {/* Pie component for rendering the pie chart */}
-                <Pie
-                    data={data}
-                    cx="50%"
-                    cy="50%"
-                    labelLine={false}
-                    label={renderCustomizedLabel}
-                    outerRadius={80}
-                    fill="#8884d8"
-                    dataKey="value"
-                >
-                    {/* Map through the data and render a Cell for each segment */}
-                    {data.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                    ))}
-                </Pie>
-            </PieChart>
-        </ResponsiveContainer>
-    );
+  return (
+    <ResponsiveContainer width="100%" height={320}>
+      <PieChart>
+        <Tooltip content={<CustomTooltip />} />
+        <Pie
+          data={data}
+          cx="50%"
+          cy="50%"
+          innerRadius={70}
+          outerRadius={105}
+          paddingAngle={4}
+          dataKey="value"
+          stroke="rgba(255, 255, 255, 0.1)"
+          strokeWidth={2}
+        >
+          {data.map((entry, index) => (
+            <Cell
+              key={`cell-${index}`}
+              fill={COLORS[index % COLORS.length]}
+              style={{ filter: "drop-shadow(0 4px 8px rgba(0,0,0,0.3))" }}
+            />
+          ))}
+        </Pie>
+      </PieChart>
+    </ResponsiveContainer>
+  );
 };
 
 export default CustomPieChart;

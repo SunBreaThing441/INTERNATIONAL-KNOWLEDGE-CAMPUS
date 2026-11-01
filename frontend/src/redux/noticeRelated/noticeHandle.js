@@ -1,28 +1,28 @@
-import axios from "axios";
+import { bulletinApi, apiClient } from "../../api/apiClient";
 import { getRequest, getSuccess, getFailed, getError } from "./noticeSlice";
 
-//const REACT_APP_BASE_URL="http://localhost:5000"
-
-// Async action to fetch all notices
+/**
+ * getAllNotices: Fetches school notices bulletin.
+ * Endpoint: GET /NoticeList/:id
+ */
 export const getAllNotices = (id, address) => async (dispatch) => {
   dispatch(getRequest());
 
   try {
-    // Make an asynchronous GET request to the specified URL
-    const result = await axios.get(
-      `${process.env.REACT_APP_BASE_URL}/${address}List/${id}`
-    );
-    // Check if the response contains a message indicating an error
+    let result;
+    if (address === "Notice") {
+      result = await bulletinApi.getNotices(id);
+    } else {
+      result = await apiClient.get(`/${address}List/${id}`);
+    }
+
     if (result.data.message) {
       dispatch(getFailed(result.data.message));
-    } 
-    else {
-      // Dispatch getSuccess with the retrieved data
+    } else {
       dispatch(getSuccess(result.data));
     }
-  } 
-  catch (error) {
-    // Dispatch getError with the error object if an error occurs
-    dispatch(getError(error));
+  } catch (error) {
+    const message = error.response?.data?.message || error.message || "Failed to fetch notices bulletin";
+    dispatch(getError(message));
   }
 };
